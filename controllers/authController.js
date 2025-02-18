@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const sendEmail = require('../config/sendEmail');
+const sendEmail = require('../utils/sendEmail');
+const crypto = require('crypto');
 
 const registerUser = async (req, res) => {
 	const { firstName, lastName, email, password } = req.body;
@@ -20,10 +21,48 @@ const registerUser = async (req, res) => {
 			password: hashedPassword,
 		});
 
+		const token = jwt.sign(
+			{ email: newUser.email },
+			process.env.JWT_SECRET,
+			{ expiresIn: '1h' }
+		);
+
 		await newUser.save();
+
+		// Send verification email below
+		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+		await sendEmail({
+			email: newUser.email,
+			subject: 'Verify your email',
+			message: `<p>Click <a href="${verificationUrl}">here</a> to verify your account</p>`,
+		});
+
 		res.status(201).json({ message: 'User registered successfully' });
 	} catch (error) {
 		res.status(500).json({ message: 'Error registering user', error });
+	}
+};
+
+const verifyEmail = async (req, res) => {
+	const { token } = req.query;
+
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		const user = await User.findOne({ email: decoded.email });
+
+		if (!user || user.isVerified)
+			return res
+				.status(400)
+				.json({ message: 'Invalid or expired token' });
+
+		user.isVerified = true;
+		await user.save();
+
+		res.json({
+			message: 'Email verified successfully. You can now log in.',
+		});
+	} catch (error) {
+		res.status(400).json({ message: 'Invalid or expired token' });
 	}
 };
 
@@ -37,6 +76,10 @@ const loginUser = async (req, res) => {
 			return res
 				.status(400)
 				.json({ message: 'Invalid email or password' });
+		}
+
+		if (!user.isVerified) {
+			return res.status(400).json({ message: 'Email not verified' });
 		}
 
 		const isMatch = await bcrypt.compare(password, user.password);
@@ -54,11 +97,11 @@ const loginUser = async (req, res) => {
 			}
 		);
 
-		await sendEmail({
-			email: user.email,
-			subject: 'Login Alert',
-			message: `Your account was just logged into from ${req.ip}`,
-		});
+		// await sendEmail({
+		// 	email: user.email,
+		// 	subject: 'Login Alert',
+		// 	message: `Your account was just logged into from ${req.ip}`,
+		// });
 
 		res.status(200).json({ token });
 	} catch (error) {
@@ -98,8 +141,75 @@ const updateUser = async (req, res) => {
 	}
 };
 
+const requestPasswordReset = async (req, res) => {
+	const { email } = req.body;
+
+	try {
+		const user = await User.findOne({ email });
+
+		if (!user) return res.status(400).json({ message: 'User not found' });
+
+		const resetToken = crypto.randomBytes(32).toString('hex');
+		const hashedToken = crypto
+			.createHash('sha256')
+			.update(resetToken)
+			.digest('hex');
+
+		user.resetPasswordToken = hashedToken;
+		user.resetPasswordExpires = Date.now() + 3600000; // Expires in 1 hour
+
+		await user.save();
+
+		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+		await sendEmail({
+			email: user.email,
+			subject: 'Reset your password',
+			message: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
+		});
+
+		res.json({ message: 'Password reset link sent to your email.' });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Internal server error' });
+	}
+};
+
+const resetPassword = async (req, res) => {
+	const { token } = req.query;
+	const { newPassword } = req.body;
+	try {
+		const hashedToken = crypto
+			.createHash('sha256')
+			.update(token)
+			.digest('hex');
+		const user = await User.findOne({
+			resetPasswordToken: hashedToken,
+			resetPasswordExpires: { $gt: Date.now() },
+		});
+
+		if (!user)
+			return res
+				.status(400)
+				.json({ message: 'Invalid or expired token' });
+
+		user.password = await bcrypt.hash(newPassword, 10);
+		user.resetPasswordToken = undefined;
+		user.resetPasswordExpires = undefined;
+
+		await user.save();
+
+		res.json({ message: 'Password reset successful. You can now log in.' });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Internal server error' });
+	}
+};
+
 module.exports = {
 	registerUser,
+	verifyEmail,
 	loginUser,
 	updateUser,
+	requestPasswordReset,
+	resetPassword,
 };
