@@ -7,13 +7,14 @@ const crypto = require('crypto');
 const registerUser = async (req, res) => {
 	const { firstName, lastName, email, password } = req.body;
 
-	const existingUser = await User.findOne({ email });
-	if (existingUser)
-		return res.status(400).json({ message: 'Email already in use' });
-
-	const salt = await bcrypt.genSalt(10);
-	const hashedPassword = await bcrypt.hash(password, salt);
 	try {
+		const existingUser = await User.findOne({ email });
+		if (existingUser)
+			return res.status(400).json({ message: 'Email already in use' });
+
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(password, salt);
+
 		const newUser = new User({
 			firstName,
 			lastName,
@@ -29,7 +30,6 @@ const registerUser = async (req, res) => {
 
 		await newUser.save();
 
-		// Send verification email below
 		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 		await sendEmail({
 			email: newUser.email,
@@ -40,6 +40,35 @@ const registerUser = async (req, res) => {
 		res.status(201).json({ message: 'User registered successfully' });
 	} catch (error) {
 		res.status(500).json({ message: 'Error registering user', error });
+	}
+};
+
+const resendVerificationEmail = async (req, res) => {
+	const { email } = req.body;
+
+	try {
+		const user = await User.findOne({ email });
+
+		if (!user) return res.status(400).json({ message: 'User not found' });
+
+		if (user.isVerified)
+			return res.status(400).json({ message: 'Email already verified' });
+
+		const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
+			expiresIn: '1h',
+		});
+
+		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+		await sendEmail({
+			email: user.email,
+			subject: 'Verify your email',
+			message: `<p>Click <a href="${verificationUrl}">here</a> to verify your account</p>`,
+		});
+
+		res.json({ message: 'Verification email sent' });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Internal server error' });
 	}
 };
 
@@ -207,6 +236,7 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
 	registerUser,
+	resendVerificationEmail,
 	verifyEmail,
 	loginUser,
 	updateUser,
