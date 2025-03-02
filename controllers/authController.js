@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
 
 		await newUser.save();
 
-		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+		const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 		await sendEmail({
 			email: newUser.email,
 			subject: 'Verify your email',
@@ -132,7 +132,12 @@ const loginUser = async (req, res) => {
 		// 	message: `Your account was just logged into from ${req.ip}`,
 		// });
 
-		res.status(200).json({ token });
+		res.status(200).json({
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			token,
+		});
 	} catch (error) {
 		res.status(500).json({ message: 'Error logging in', error });
 	}
