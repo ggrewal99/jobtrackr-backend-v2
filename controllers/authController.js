@@ -133,10 +133,12 @@ const loginUser = async (req, res) => {
 		// });
 
 		res.status(200).json({
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
 			token,
+			user: {
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+			},
 		});
 	} catch (error) {
 		res.status(500).json({ message: 'Error logging in', error });
