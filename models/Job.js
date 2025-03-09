@@ -9,7 +9,7 @@ const jobSchema = new mongoose.Schema(
 		status: {
 			type: String,
 			required: true,
-			enum: ['pending', 'in progress', 'declined', 'accepted'],
+			enum: ['pending', 'inProgress', 'declined', 'accepted'],
 		},
 		company: {
 			type: String,
