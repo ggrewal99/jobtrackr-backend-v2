@@ -9,11 +9,13 @@ const {
 	verifyEmail,
 	requestPasswordReset,
 	resetPassword,
+	changePassword,
 } = require('../controllers/authController');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.put('/update', protect, updateUser);
+router.put('/change-password', protect, changePassword);
 
 router.get('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationEmail);

@@ -228,13 +228,41 @@ const resetPassword = async (req, res) => {
 				.status(400)
 				.json({ message: 'Invalid or expired token' });
 
-		user.password = await bcrypt.hash(newPassword, 10);
+		const salt = await bcrypt.genSalt(10);
+		user.password = await bcrypt.hash(newPassword, salt);
 		user.resetPasswordToken = undefined;
 		user.resetPasswordExpires = undefined;
 
 		await user.save();
 
 		res.json({ message: 'Password reset successful. You can now log in.' });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Internal server error' });
+	}
+};
+
+const changePassword = async (req, res) => {
+	const { currentPassword, newPassword } = req.body;
+	const userId = req.user.id;
+
+	try {
+		const user = await User.findById(userId);
+
+		if (!user) return res.status(404).json({ message: 'User not found' });
+
+		const isMatch = await bcrypt.compare(currentPassword, user.password);
+		if (!isMatch)
+			return res
+				.status(400)
+				.json({ message: 'Invalid current password' });
+
+		const salt = await bcrypt.genSalt(10);
+		user.password = await bcrypt.hash(newPassword, salt);
+
+		await user.save();
+
+		res.json({ message: 'Password changed successfully' });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Internal server error' });
@@ -249,4 +277,5 @@ module.exports = {
 	updateUser,
 	requestPasswordReset,
 	resetPassword,
+	changePassword,
 };
