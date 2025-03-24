@@ -196,14 +196,16 @@ const requestPasswordReset = async (req, res) => {
 
 		await user.save();
 
-		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+		const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
 		await sendEmail({
 			email: user.email,
 			subject: 'Reset your password',
 			message: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
 		});
 
-		res.json({ message: 'Password reset link sent to your email.' });
+		res.json({
+			message: 'Password reset link has been sent to your email.',
+		});
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Internal server error' });
