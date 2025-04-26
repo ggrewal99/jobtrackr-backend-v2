@@ -2,7 +2,7 @@ const Job = require('../models/Job');
 
 const getJobs = async (req, res) => {
 	try {
-		const jobs = await Job.find();
+		const jobs = await Job.find({ createdBy: req.user.id });
 		res.status(200).json(jobs);
 	} catch (error) {
 		res.status(500).json({ message: 'Error getting jobs', error });
@@ -11,7 +11,10 @@ const getJobs = async (req, res) => {
 
 const getJob = async (req, res) => {
 	try {
-		const job = await Job.findById(req.params.id);
+		const job = await Job.findOne({
+			_id: req.params.id,
+			createdBy: req.user.id,
+		});
 		res.status(200).json(job);
 	} catch (error) {
 		res.status(500).json({ message: 'Error getting job', error });
@@ -38,7 +41,10 @@ const createJob = async (req, res) => {
 
 const updateJob = async (req, res) => {
 	try {
-		const job = await Job.findById(req.params.id);
+		const job = await Job.findOne({
+			_id: req.params.id,
+			createdBy: req.user.id,
+		});
 
 		if (!job) {
 			return res.status(404).json({ message: 'Job not found' });
@@ -59,7 +65,7 @@ const updateJob = async (req, res) => {
 const deleteJob = async (req, res) => {
 	const { id } = req.params;
 	try {
-		await Job.findByIdAndDelete(id);
+		await Job.findOneAndDelete({ _id: id, createdBy: req.user.id });
 		res.status(200).json({ message: 'Job deleted successfully' });
 	} catch (error) {
 		res.status(500).json({ message: 'Error deleting job', error });
