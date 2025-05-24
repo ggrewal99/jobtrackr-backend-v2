@@ -40,7 +40,10 @@ const createTask = async (req, res) => {
 		});
 
 		await newTask.save();
-		res.status(201).json({ message: 'Task created successfully' });
+		res.status(201).json({
+			message: 'Task created successfully',
+			task: newTask,
+		});
 	} catch (error) {
 		res.status(500).json({ message: 'Error creating task', error });
 	}

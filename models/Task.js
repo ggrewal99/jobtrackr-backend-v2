@@ -10,7 +10,7 @@ const taskSchema = new mongoose.Schema(
 		jobId: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'Job',
-			required: true,
+			required: false,
 		},
 		title: {
 			type: String,
@@ -23,7 +23,7 @@ const taskSchema = new mongoose.Schema(
 		taskType: {
 			type: String,
 			required: true,
-			enum: ['follow-up', 'interview', 'networking', 'other'],
+			enum: ['follow-up', 'interview', 'networking', 'research', 'other'],
 		},
 		notes: {
 			type: String,
