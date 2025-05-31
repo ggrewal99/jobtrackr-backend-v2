@@ -89,10 +89,30 @@ const deleteTask = async (req, res) => {
 		res.status(500).json({ message: 'Error deleting task', error });
 	}
 };
+
+const deleteMultipleTasks = async (req, res) => {
+	const { ids } = req.body;
+
+	if (!Array.isArray(ids) || ids.length === 0) {
+		return res.status(400).json({ message: 'Invalid IDs provided' });
+	}
+
+	try {
+		await Task.deleteMany({
+			_id: { $in: ids },
+			userId: req.user.id,
+		});
+		res.status(200).json({ message: 'Tasks deleted successfully' });
+	} catch (error) {
+		res.status(500).json({ message: 'Error deleting tasks', error });
+	}
+};
+
 module.exports = {
 	getTasks,
 	getTask,
 	createTask,
 	updateTask,
 	deleteTask,
+	deleteMultipleTasks,
 };

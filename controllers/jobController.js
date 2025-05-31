@@ -73,10 +73,24 @@ const deleteJob = async (req, res) => {
 	}
 };
 
+const deleteMultipleJobs = async (req, res) => {
+	const { ids } = req.body;
+	if (!Array.isArray(ids) || ids.length === 0) {
+		return res.status(400).json({ message: 'No job IDs provided' });
+	}
+	try {
+		await Job.deleteMany({ _id: { $in: ids }, userId: req.user.id });
+		res.status(200).json({ message: 'Jobs deleted successfully' });
+	} catch (error) {
+		res.status(500).json({ message: 'Error deleting jobs', error });
+	}
+};
+
 module.exports = {
 	getJobs,
 	getJob,
 	createJob,
 	updateJob,
 	deleteJob,
+	deleteMultipleJobs,
 };
