@@ -22,7 +22,7 @@ const getJob = async (req, res) => {
 };
 
 const createJob = async (req, res) => {
-	const { position, status, company, notes } = req.body;
+	const { position, status, company, notes, dateApplied } = req.body;
 
 	try {
 		const newJob = new Job({
@@ -30,6 +30,7 @@ const createJob = async (req, res) => {
 			status,
 			company,
 			notes,
+			dateApplied,
 			userId: req.user.id,
 		});
 
@@ -55,6 +56,9 @@ const updateJob = async (req, res) => {
 		if (req.body.status !== undefined) job.status = req.body.status;
 		if (req.body.company !== undefined) job.company = req.body.company;
 		if (req.body.notes !== undefined) job.notes = req.body.notes;
+		if (req.body.dateApplied !== undefined) {
+			job.dateApplied = new Date(req.body.dateApplied);
+		}
 
 		await job.save();
 		res.status(200).json({ message: 'Job updated successfully', job });
