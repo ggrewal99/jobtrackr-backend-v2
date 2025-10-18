@@ -5,6 +5,17 @@ const Job = require('../models/Job');
 const Task = require('../models/Task');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { 
+  AppError, 
+  ValidationError, 
+  NotFoundError, 
+  UnauthorizedError, 
+  ForbiddenError, 
+  ConflictError, 
+  UnprocessableEntityError,
+  globalErrorHandler,
+  catchAsync 
+} = require('../utils/errorHandler');
 
 // Mock the email utility
 jest.mock('../utils/sendEmail', () => jest.fn(() => Promise.resolve()));
@@ -82,6 +93,107 @@ describe('Error Handler Tests', () => {
 
       expect(response.body.status).toBe('fail');
       expect(response.body.message).toBe('Email already in use');
+    });
+  });
+
+  describe('Error Class Unit Tests', () => {
+    it('should create AppError with 4xx status as fail', () => {
+      const error = new AppError('Test error', 400);
+      expect(error.statusCode).toBe(400);
+      expect(error.status).toBe('fail');
+      expect(error.isOperational).toBe(true);
+      expect(error.message).toBe('Test error');
+    });
+
+    it('should create AppError with 5xx status as error', () => {
+      const error = new AppError('Test error', 500);
+      expect(error.statusCode).toBe(500);
+      expect(error.status).toBe('error');
+      expect(error.isOperational).toBe(true);
+      expect(error.message).toBe('Test error');
+    });
+
+    it('should create ValidationError', () => {
+      const error = new ValidationError('Validation failed');
+      expect(error.statusCode).toBe(400);
+      expect(error.name).toBe('ValidationError');
+      expect(error.message).toBe('Validation failed');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create NotFoundError with default message', () => {
+      const error = new NotFoundError();
+      expect(error.statusCode).toBe(404);
+      expect(error.message).toBe('Resource not found');
+      expect(error.name).toBe('NotFoundError');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create NotFoundError with custom message', () => {
+      const error = new NotFoundError('Custom not found');
+      expect(error.statusCode).toBe(404);
+      expect(error.message).toBe('Custom not found');
+      expect(error.name).toBe('NotFoundError');
+    });
+
+    it('should create UnauthorizedError with default message', () => {
+      const error = new UnauthorizedError();
+      expect(error.statusCode).toBe(401);
+      expect(error.message).toBe('Unauthorized access');
+      expect(error.name).toBe('UnauthorizedError');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create UnauthorizedError with custom message', () => {
+      const error = new UnauthorizedError('Custom unauthorized');
+      expect(error.statusCode).toBe(401);
+      expect(error.message).toBe('Custom unauthorized');
+      expect(error.name).toBe('UnauthorizedError');
+    });
+
+    it('should create ForbiddenError with default message', () => {
+      const error = new ForbiddenError();
+      expect(error.statusCode).toBe(403);
+      expect(error.message).toBe('Forbidden access');
+      expect(error.name).toBe('ForbiddenError');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create ForbiddenError with custom message', () => {
+      const error = new ForbiddenError('Custom forbidden');
+      expect(error.statusCode).toBe(403);
+      expect(error.message).toBe('Custom forbidden');
+      expect(error.name).toBe('ForbiddenError');
+    });
+
+    it('should create ConflictError with default message', () => {
+      const error = new ConflictError();
+      expect(error.statusCode).toBe(409);
+      expect(error.message).toBe('Resource already exists');
+      expect(error.name).toBe('ConflictError');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create ConflictError with custom message', () => {
+      const error = new ConflictError('Custom conflict');
+      expect(error.statusCode).toBe(409);
+      expect(error.message).toBe('Custom conflict');
+      expect(error.name).toBe('ConflictError');
+    });
+
+    it('should create UnprocessableEntityError with default message', () => {
+      const error = new UnprocessableEntityError();
+      expect(error.statusCode).toBe(422);
+      expect(error.message).toBe('Invalid data provided');
+      expect(error.name).toBe('UnprocessableEntityError');
+      expect(error.status).toBe('fail');
+    });
+
+    it('should create UnprocessableEntityError with custom message', () => {
+      const error = new UnprocessableEntityError('Custom unprocessable');
+      expect(error.statusCode).toBe(422);
+      expect(error.message).toBe('Custom unprocessable');
+      expect(error.name).toBe('UnprocessableEntityError');
     });
   });
 
@@ -321,6 +433,308 @@ describe('Error Handler Tests', () => {
         .expect(401);
 
       expect(response.body.message).toBe('Not authorized, token failed');
+    });
+  });
+
+  describe('catchAsync Wrapper', () => {
+    it('should catch async errors and pass to next', async () => {
+      const asyncFn = jest.fn().mockRejectedValue(new Error('Async error'));
+      const wrappedFn = catchAsync(asyncFn);
+      
+      const req = {};
+      const res = {};
+      const next = jest.fn();
+      
+      await wrappedFn(req, res, next);
+      
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('should pass through successful async functions', async () => {
+      const asyncFn = jest.fn().mockResolvedValue('success');
+      const wrappedFn = catchAsync(asyncFn);
+      
+      const req = {};
+      const res = {};
+      const next = jest.fn();
+      
+      await wrappedFn(req, res, next);
+      
+      expect(asyncFn).toHaveBeenCalledWith(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Global Error Handler - Test Environment', () => {
+    let originalEnv;
+
+    beforeEach(() => {
+      originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle operational errors in test mode', () => {
+      const error = new ValidationError('Test error');
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Test error'
+      });
+    });
+
+    it('should handle JWT errors in test mode', () => {
+      const error = new Error('JWT Error');
+      error.name = 'JsonWebTokenError';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Invalid token. Please log in again!'
+      });
+    });
+
+    it('should handle TokenExpiredError in test mode', () => {
+      const error = new Error('Token Expired');
+      error.name = 'TokenExpiredError';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Your token has expired! Please log in again.'
+      });
+    });
+
+    it('should handle non-operational errors in test mode', () => {
+      const error = new Error('Unknown error');
+      error.isOperational = false;
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'error',
+        message: 'Something went wrong!'
+      });
+    });
+  });
+
+  describe('Global Error Handler - Development Environment', () => {
+    let originalEnv;
+
+    beforeEach(() => {
+      originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should send detailed error in development mode', () => {
+      const error = new ValidationError('Test error');
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        error: error,
+        message: 'Test error',
+        stack: error.stack
+      });
+    });
+  });
+
+  describe('Global Error Handler - Production Environment', () => {
+    let originalEnv;
+
+    beforeEach(() => {
+      originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle CastError in production', () => {
+      const error = new Error('Cast to ObjectId failed');
+      error.name = 'CastError';
+      error.path = 'id';
+      error.value = 'invalid-id';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Invalid id: invalid-id'
+      });
+    });
+
+    it('should handle duplicate key error in production', () => {
+      const error = new Error('Duplicate key error');
+      error.code = 11000;
+      error.errmsg = 'E11000 duplicate key error collection: users index: email_1 dup key: { email: "test@example.com" }';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Duplicate field value: "test@example.com". Please use another value!'
+      });
+    });
+
+    it('should handle Mongoose validation error in production', () => {
+      const error = new Error('Validation failed');
+      error.name = 'ValidationError';
+      error.errors = {
+        email: { message: 'Email is required' },
+        password: { message: 'Password is too short' }
+      };
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Invalid input data. Email is required. Password is too short'
+      });
+    });
+
+    it('should handle JWT errors in production', () => {
+      const error = new Error('JWT Error');
+      error.name = 'JsonWebTokenError';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Invalid token. Please log in again!'
+      });
+    });
+
+    it('should handle TokenExpiredError in production', () => {
+      const error = new Error('Token Expired');
+      error.name = 'TokenExpiredError';
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Your token has expired! Please log in again.'
+      });
+    });
+
+    it('should handle operational errors in production', () => {
+      const error = new ValidationError('Test error');
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'fail',
+        message: 'Test error'
+      });
+    });
+
+    it('should handle non-operational errors in production', () => {
+      const error = new Error('Unknown error');
+      error.isOperational = false;
+      const req = {};
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      globalErrorHandler(error, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'error',
+        message: 'Something went wrong!'
+      });
     });
   });
 });
