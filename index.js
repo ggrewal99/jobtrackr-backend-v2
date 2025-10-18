@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { globalErrorHandler } = require('./utils/errorHandler');
 
 dotenv.config();
 
@@ -18,8 +19,16 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-	connectDB();
-	console.log(`Server is running on port ${PORT}`);
-});
+// Global error handling middleware (must be last)
+app.use(globalErrorHandler);
+
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+	const PORT = process.env.PORT || 5000;
+	app.listen(PORT, () => {
+		connectDB();
+		console.log(`Server is running on port ${PORT}`);
+	});
+}
+
+module.exports = app;

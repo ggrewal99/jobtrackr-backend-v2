@@ -5,7 +5,10 @@
 	"scripts": {
 		"dev": "nodemon index.js",
 		"start": "node index.js",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage",
+		"test:ci": "jest --ci --coverage --watchAll=false"
 	},
 	"author": "",
 	"license": "ISC",
@@ -19,5 +22,12 @@
 		"mongoose": "^8.10.1",
 		"nodemailer": "^6.10.0",
 		"nodemon": "^3.1.9"
+	},
+	"devDependencies": {
+		"@types/jest": "^30.0.0",
+		"@types/supertest": "^6.0.3",
+		"jest": "^30.2.0",
+		"mongodb-memory-server": "^10.2.3",
+		"supertest": "^7.1.4"
 	}
 }

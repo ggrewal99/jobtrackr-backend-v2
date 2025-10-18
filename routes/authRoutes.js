@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { authValidation } = require('../middleware/validation');
 const {
 	registerUser,
 	resendVerificationEmail,
@@ -12,10 +13,10 @@ const {
 	changePassword,
 } = require('../controllers/authController');
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/register', authValidation.register, registerUser);
+router.post('/login', authValidation.login, loginUser);
 router.put('/update', protect, updateUser);
-router.put('/change-password', protect, changePassword);
+router.put('/change-password', protect, authValidation.changePassword, changePassword);
 
 router.get('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationEmail);
