@@ -1,17 +1,5 @@
 const { ValidationError } = require('../utils/errorHandler');
 
-// Generic validation middleware
-const validate = (schema) => {
-  return (req, res, next) => {
-    const { error } = schema.validate(req.body);
-    if (error) {
-      const errorMessage = error.details.map(detail => detail.message).join(', ');
-      return next(new ValidationError(errorMessage));
-    }
-    next();
-  };
-};
-
 // Job validation schemas
 const jobValidation = {
   create: (req, res, next) => {
@@ -229,7 +217,6 @@ const validateIdArray = (req, res, next) => {
 };
 
 module.exports = {
-  validate,
   jobValidation,
   taskValidation,
   authValidation,
