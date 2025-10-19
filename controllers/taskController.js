@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
 const { NotFoundError, ValidationError, catchAsync } = require('../utils/errorHandler');
+const { MESSAGES } = require('../constants/messages');
 
 const getTasks = catchAsync(async (req, res) => {
 	const tasks = await Task.find({ userId: req.user.id }).sort({
@@ -15,7 +16,7 @@ const getTask = catchAsync(async (req, res) => {
 	});
 
 	if (!task) {
-		throw new NotFoundError('Task not found');
+		throw new NotFoundError(MESSAGES.ERROR.TASK_NOT_FOUND);
 	}
 
 	res.status(200).json(task);
@@ -36,8 +37,7 @@ const createTask = catchAsync(async (req, res) => {
 
 	await newTask.save();
 	res.status(201).json({
-		status: 'success',
-		message: 'Task created successfully',
+		message: MESSAGES.SUCCESS.TASK_CREATED,
 		task: newTask,
 	});
 });
@@ -49,10 +49,9 @@ const updateTask = catchAsync(async (req, res) => {
 	});
 
 	if (!task) {
-		throw new NotFoundError('Task not found');
+		throw new NotFoundError(MESSAGES.ERROR.TASK_NOT_FOUND);
 	}
 
-	// Update only provided fields
 	if (req.body.title !== undefined) task.title = req.body.title;
 	if (req.body.dueDateTime !== undefined) {
 		task.dueDateTime = new Date(req.body.dueDateTime);
@@ -63,8 +62,7 @@ const updateTask = catchAsync(async (req, res) => {
 
 	await task.save();
 	res.status(200).json({
-		status: 'success',
-		message: 'Task updated successfully',
+		message: MESSAGES.SUCCESS.TASK_UPDATED,
 		task: task,
 	});
 });
@@ -76,10 +74,10 @@ const deleteTask = catchAsync(async (req, res) => {
 	});
 
 	if (!task) {
-		throw new NotFoundError('Task not found');
+		throw new NotFoundError(MESSAGES.ERROR.TASK_NOT_FOUND);
 	}
 
-	res.status(200).json({ message: 'Task deleted successfully' });
+	res.status(200).json({ message: MESSAGES.SUCCESS.TASK_DELETED });
 });
 
 const deleteMultipleTasks = catchAsync(async (req, res) => {
@@ -91,10 +89,10 @@ const deleteMultipleTasks = catchAsync(async (req, res) => {
 	});
 
 	if (result.deletedCount === 0) {
-		throw new NotFoundError('No tasks found to delete');
+		throw new NotFoundError(MESSAGES.ERROR.NO_TASKS_FOUND_TO_DELETE);
 	}
 
-	res.status(200).json({ message: 'Tasks deleted successfully' });
+	res.status(200).json({ message: MESSAGES.SUCCESS.TASKS_DELETED });
 });
 
 module.exports = {
