@@ -1,5 +1,6 @@
 const Job = require('../models/Job');
 const { NotFoundError, catchAsync } = require('../utils/errorHandler');
+const { MESSAGES } = require('../constants/messages');
 
 const getJobs = catchAsync(async (req, res) => {
 	const jobs = await Job.find({ userId: req.user.id });
@@ -13,7 +14,7 @@ const getJob = catchAsync(async (req, res) => {
 	});
 
 	if (!job) {
-		throw new NotFoundError('Job not found');
+		throw new NotFoundError(MESSAGES.ERROR.JOB_NOT_FOUND);
 	}
 
 	res.status(200).json(job);
@@ -33,7 +34,7 @@ const createJob = catchAsync(async (req, res) => {
 
 	await newJob.save();
 	
-	res.status(201).json({ message: 'Job created successfully' });
+	res.status(201).json({ message: MESSAGES.SUCCESS.JOB_CREATED });
 });
 
 const updateJob = catchAsync(async (req, res) => {
@@ -43,10 +44,9 @@ const updateJob = catchAsync(async (req, res) => {
 	});
 
 	if (!job) {
-		throw new NotFoundError('Job not found');
+		throw new NotFoundError(MESSAGES.ERROR.JOB_NOT_FOUND);
 	}
 
-	// Update only provided fields
 	if (req.body.position !== undefined) job.position = req.body.position;
 	if (req.body.status !== undefined) job.status = req.body.status;
 	if (req.body.company !== undefined) job.company = req.body.company;
@@ -58,7 +58,7 @@ const updateJob = catchAsync(async (req, res) => {
 	await job.save();
 	
 	res.status(200).json({
-		message: 'Job updated successfully',
+		message: MESSAGES.SUCCESS.JOB_UPDATED,
 		job: job
 	});
 });
@@ -70,10 +70,10 @@ const deleteJob = catchAsync(async (req, res) => {
 	});
 
 	if (!job) {
-		throw new NotFoundError('Job not found');
+		throw new NotFoundError(MESSAGES.ERROR.JOB_NOT_FOUND);
 	}
 
-	res.status(200).json({ message: 'Job deleted successfully' });
+	res.status(200).json({ message: MESSAGES.SUCCESS.JOB_DELETED });
 });
 
 const deleteMultipleJobs = catchAsync(async (req, res) => {
@@ -85,10 +85,10 @@ const deleteMultipleJobs = catchAsync(async (req, res) => {
 	});
 
 	if (result.deletedCount === 0) {
-		throw new NotFoundError('No jobs found to delete');
+		throw new NotFoundError(MESSAGES.ERROR.NO_JOBS_FOUND_TO_DELETE);
 	}
 
-	res.status(200).json({ message: 'Jobs deleted successfully' });
+	res.status(200).json({ message: MESSAGES.SUCCESS.JOBS_DELETED });
 });
 
 module.exports = {

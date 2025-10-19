@@ -72,7 +72,10 @@ const MESSAGES = {
       INVALID_EMAIL_FORMAT: 'Invalid email format',
       INVALID_DATE_FORMAT: 'Invalid date format',
       INVALID_DUE_DATE_FORMAT: 'Invalid date format for due date',
+      INVALID_DATE_FORMAT_FOR_DATE_APPLIED: 'Invalid date format for dateApplied',
+      INVALID_DATE_FORMAT_FOR_DUE_DATE_TIME: 'Invalid date format for dueDateTime',
       INVALID_ID_FORMAT: 'Invalid ID format',
+      INVALID_JOB_ID: 'Invalid job ID format',
       INVALID_JOB_ID_FORMAT: 'Invalid job ID format',
       
       // Length validation
@@ -88,10 +91,15 @@ const MESSAGES = {
       AT_LEAST_ONE_ID: 'At least one ID is required',
       INVALID_ID_IN_ARRAY: 'Invalid ID format in array',
       
+      // Bulk operation errors
+      NO_JOBS_FOUND_TO_DELETE: 'No jobs found to delete',
+      NO_TASKS_FOUND_TO_DELETE: 'No tasks found to delete',
+      
       // General validation
       FIELD_REQUIRED: 'This field is required',
       FIELD_EMPTY: 'This field cannot be empty',
-      INVALID_VALUE: 'Invalid value provided'
+      INVALID_VALUE: 'Invalid value provided',
+      NOTES_EMPTY: 'Notes cannot be empty'
     }
   };
   

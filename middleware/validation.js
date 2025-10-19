@@ -183,7 +183,7 @@ const jobValidation = {
         }),
       dateApplied: Joi.date().iso().optional()
         .messages({
-          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT
+          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT_FOR_DATE_APPLIED
         }),
       notes: Joi.string().trim().allow('')
         .messages({
@@ -214,7 +214,7 @@ const jobValidation = {
         }),
       dateApplied: Joi.date().iso()
         .messages({
-          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT
+          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT_FOR_DATE_APPLIED
         }),
       notes: Joi.string().trim().allow('')
         .messages({
@@ -241,7 +241,7 @@ const taskValidation = {
         }),
       dueDateTime: Joi.date().iso().required()
         .messages({
-          'date.format': MESSAGES.VALIDATION.INVALID_DUE_DATE_FORMAT,
+          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT_FOR_DUE_DATE_TIME,
           'any.required': MESSAGES.VALIDATION.DUE_DATE_TIME_REQUIRED
         }),
       taskType: Joi.string().valid('follow-up', 'interview', 'networking', 'research', 'other').required()
@@ -251,7 +251,7 @@ const taskValidation = {
         }),
       jobId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional()
         .messages({
-          'string.pattern.base': MESSAGES.VALIDATION.INVALID_JOB_ID
+          'string.pattern.base': MESSAGES.VALIDATION.INVALID_JOB_ID_FORMAT
         }),
       notes: Joi.string().trim().allow(''),
       completed: Joi.boolean().default(false)
@@ -272,7 +272,7 @@ const taskValidation = {
         }),
       dueDateTime: Joi.date().iso()
         .messages({
-          'date.format': MESSAGES.VALIDATION.INVALID_DUE_DATE_FORMAT
+          'date.format': MESSAGES.VALIDATION.INVALID_DATE_FORMAT_FOR_DUE_DATE_TIME
         }),
       taskType: Joi.string().valid('follow-up', 'interview', 'networking', 'research', 'other')
         .messages({
@@ -280,7 +280,7 @@ const taskValidation = {
         }),
       jobId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/)
         .messages({
-          'string.pattern.base': MESSAGES.VALIDATION.INVALID_JOB_ID
+          'string.pattern.base': MESSAGES.VALIDATION.INVALID_JOB_ID_FORMAT
         }),
       notes: Joi.string().trim().allow(''),
       completed: Joi.boolean()

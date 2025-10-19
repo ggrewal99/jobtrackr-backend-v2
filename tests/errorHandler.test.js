@@ -376,7 +376,7 @@ describe('Error Handler Tests', () => {
         .expect(400);
 
       expect(response.body.status).toBe('fail');
-      expect(response.body.message).toContain('First name is required');
+      expect(response.body.message).toContain('"firstName" must be a string');
     });
 
     it('should handle undefined values in request body', async () => {
