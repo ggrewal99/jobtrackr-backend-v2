@@ -10,13 +10,14 @@ const {
 	ValidationError,
 	catchAsync 
 } = require('../utils/errorHandler');
+const { MESSAGES } = require('../constants/messages');
 
 const registerUser = catchAsync(async (req, res) => {
 	const { firstName, lastName, email, password } = req.body;
 
 	const existingUser = await User.findOne({ email });
 	if (existingUser) {
-		throw new ConflictError('Email already in use');
+		throw new ConflictError(MESSAGES.ERROR.EMAIL_ALREADY_IN_USE);
 	}
 
 	const salt = await bcrypt.genSalt(10);
@@ -46,7 +47,7 @@ const registerUser = catchAsync(async (req, res) => {
 
 	res.status(201).json({ 
 		status: 'success',
-		message: 'User registered successfully' 
+		message: MESSAGES.SUCCESS.USER_REGISTERED 
 	});
 });
 
@@ -55,11 +56,11 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
 
 	const user = await User.findOne({ email });
 	if (!user) {
-		throw new NotFoundError('User not found');
+		throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
 	}
 
 	if (user.isVerified) {
-		throw new ValidationError('Email already verified');
+		throw new ValidationError(MESSAGES.ERROR.EMAIL_ALREADY_VERIFIED);
 	}
 
 	const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
@@ -75,7 +76,7 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
 
 	res.json({ 
 		status: 'success',
-		message: 'Verification email sent' 
+		message: MESSAGES.SUCCESS.VERIFICATION_EMAIL_SENT 
 	});
 });
 
@@ -86,11 +87,11 @@ const verifyEmail = catchAsync(async (req, res) => {
 	const user = await User.findOne({ email: decoded.email });
 
 	if (!user) {
-		throw new UnauthorizedError('Invalid or expired token');
+		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN);
 	}
 
 	if (user.isVerified) {
-		throw new ValidationError('Email already verified');
+		throw new ValidationError(MESSAGES.ERROR.EMAIL_ALREADY_VERIFIED);
 	}
 
 	user.isVerified = true;
@@ -98,7 +99,7 @@ const verifyEmail = catchAsync(async (req, res) => {
 
 	res.json({
 		status: 'success',
-		message: 'Email verified successfully. You can now log in.',
+		message: MESSAGES.SUCCESS.EMAIL_VERIFIED,
 	});
 });
 
@@ -107,16 +108,16 @@ const loginUser = catchAsync(async (req, res) => {
 
 	const user = await User.findOne({ email });
 	if (!user) {
-		throw new UnauthorizedError('Invalid email or password');
+		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
 	}
 
 	if (!user.isVerified) {
-		throw new UnauthorizedError('Email not verified. Please check your email and verify your account.');
+		throw new UnauthorizedError(MESSAGES.ERROR.EMAIL_NOT_VERIFIED);
 	}
 
 	const isMatch = await bcrypt.compare(password, user.password);
 	if (!isMatch) {
-		throw new UnauthorizedError('Invalid email or password');
+		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
 	}
 
 	const token = jwt.sign(
@@ -127,12 +128,6 @@ const loginUser = catchAsync(async (req, res) => {
 		}
 	);
 
-	// await sendEmail({
-	// 	email: user.email,
-	// 	subject: 'Login Alert',
-	// 	message: `Your account was just logged into from ${req.ip}`,
-	// });
-
 	res.status(200).json({
 		token,
 		user: {
@@ -140,6 +135,7 @@ const loginUser = catchAsync(async (req, res) => {
 			lastName: user.lastName,
 			email: user.email,
 		},
+		message: MESSAGES.SUCCESS.LOGIN_SUCCESS,
 	});
 });
 
@@ -147,13 +143,20 @@ const updateUser = catchAsync(async (req, res) => {
 	const userId = req.user.id;
 	const updates = {};
 
-	if (req.body.firstName) updates.firstName = req.body.firstName;
-	if (req.body.lastName) updates.lastName = req.body.lastName;
-	if (req.body.email) updates.email = req.body.email;
-
-	if (req.body.password) {
+	if (req.body.firstName !== undefined) updates.firstName = req.body.firstName;
+	if (req.body.lastName !== undefined) updates.lastName = req.body.lastName;
+	if (req.body.email !== undefined) updates.email = req.body.email;
+	if (req.body.password !== undefined) {
 		const salt = await bcrypt.genSalt(10);
 		updates.password = await bcrypt.hash(req.body.password, salt);
+	}
+
+	if (Object.keys(updates).length === 0) {
+		const user = await User.findById(userId);
+		return res.status(200).json({
+		  message: MESSAGES.SUCCESS.USER_UPDATED,
+		  user: user,
+		});
 	}
 
 	const updatedUser = await User.findByIdAndUpdate(userId, updates, {
@@ -161,11 +164,11 @@ const updateUser = catchAsync(async (req, res) => {
 	});
 
 	if (!updatedUser) {
-		throw new NotFoundError('User not found');
+		throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
 	}
 
 	res.status(200).json({
-		message: 'User updated successfully',
+		message: MESSAGES.SUCCESS.USER_UPDATED,
 		user: updatedUser,
 	});
 });
@@ -175,7 +178,7 @@ const requestPasswordReset = catchAsync(async (req, res) => {
 
 	const user = await User.findOne({ email });
 	if (!user) {
-		throw new NotFoundError('User not found');
+		throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
 	}
 
 	const resetToken = crypto.randomBytes(32).toString('hex');
@@ -185,7 +188,7 @@ const requestPasswordReset = catchAsync(async (req, res) => {
 		.digest('hex');
 
 	user.resetPasswordToken = hashedToken;
-	user.resetPasswordExpires = Date.now() + 3600000; // Expires in 1 hour
+	user.resetPasswordExpires = Date.now() + 3600000;
 
 	await user.save();
 
@@ -198,7 +201,7 @@ const requestPasswordReset = catchAsync(async (req, res) => {
 
 	res.json({
 		status: 'success',
-		message: 'Password reset link has been sent to your email.',
+		message: MESSAGES.SUCCESS.PASSWORD_RESET_SENT,
 	});
 });
 
@@ -216,7 +219,7 @@ const resetPassword = catchAsync(async (req, res) => {
 	});
 
 	if (!user) {
-		throw new UnauthorizedError('Invalid or expired token');
+		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN);
 	}
 
 	const salt = await bcrypt.genSalt(10);
@@ -228,7 +231,7 @@ const resetPassword = catchAsync(async (req, res) => {
 
 	res.json({ 
 		status: 'success',
-		message: 'Password reset successful. You can now log in.' 
+		message: MESSAGES.SUCCESS.PASSWORD_RESET_SUCCESS,
 	});
 });
 
@@ -238,12 +241,12 @@ const changePassword = catchAsync(async (req, res) => {
 
 	const user = await User.findById(userId);
 	if (!user) {
-		throw new NotFoundError('User not found');
+		throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
 	}
 
 	const isMatch = await bcrypt.compare(currentPassword, user.password);
 	if (!isMatch) {
-		throw new UnauthorizedError('Invalid current password');
+		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CURRENT_PASSWORD);
 	}
 
 	const salt = await bcrypt.genSalt(10);
@@ -253,7 +256,7 @@ const changePassword = catchAsync(async (req, res) => {
 
 	res.json({ 
 		status: 'success',
-		message: 'Password changed successfully' 
+		message: MESSAGES.SUCCESS.PASSWORD_CHANGED,
 	});
 });
 
