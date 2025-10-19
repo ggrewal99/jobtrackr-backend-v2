@@ -262,7 +262,7 @@ router.post('/login', authValidation.login, loginUser);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/update', protect, updateUser);
+router.put('/update', protect, authValidation.updateUser, updateUser);
 
 /**
  * @swagger
@@ -385,7 +385,7 @@ router.get('/verify-email', verifyEmail);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/resend-verification', resendVerificationEmail);
+router.post('/resend-verification', authValidation.resendVerification, resendVerificationEmail);
 
 /**
  * @swagger
@@ -420,7 +420,7 @@ router.post('/resend-verification', resendVerificationEmail);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/forgot-password', requestPasswordReset);
+router.post('/forgot-password', authValidation.requestPasswordReset, requestPasswordReset);
 
 /**
  * @swagger
@@ -455,6 +455,6 @@ router.post('/forgot-password', requestPasswordReset);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/reset-password', resetPassword);
+router.post('/reset-password', authValidation.resetPassword, resetPassword);
 
 module.exports = router;
