@@ -33,4 +33,10 @@ const jobSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
+// Indexes for analytics optimization
+jobSchema.index({ userId: 1, dateApplied: -1 }); // For timeline queries
+jobSchema.index({ userId: 1, status: 1 }); // For status breakdown
+jobSchema.index({ userId: 1, createdAt: -1 }); // For recent applications
+jobSchema.index({ userId: 1, updatedAt: -1 }); // For stage progression
+
 module.exports = mongoose.model('Job', jobSchema);

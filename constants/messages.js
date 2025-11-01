@@ -20,7 +20,10 @@ const MESSAGES = {
       TASK_CREATED: 'Task created successfully',
       TASK_UPDATED: 'Task updated successfully',
       TASK_DELETED: 'Task deleted successfully',
-      TASKS_DELETED: 'Tasks deleted successfully'
+      TASKS_DELETED: 'Tasks deleted successfully',
+      
+      // Analytics success messages
+      ANALYTICS_RETRIEVED: 'Analytics retrieved successfully'
     },
   
     // ERROR MESSAGES

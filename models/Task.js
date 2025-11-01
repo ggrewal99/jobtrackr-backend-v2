@@ -37,4 +37,8 @@ const taskSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
+// Indexes for analytics optimization
+taskSchema.index({ userId: 1, dueDateTime: 1 }); // For upcoming tasks
+taskSchema.index({ userId: 1, completed: 1 }); // For task completion analytics
+
 module.exports = mongoose.model('Task', taskSchema);
