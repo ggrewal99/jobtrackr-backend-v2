@@ -18,13 +18,18 @@
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.7",
 		"express": "^4.21.2",
+		"express-mongo-sanitize": "^2.2.0",
+		"express-rate-limit": "^8.2.1",
+		"helmet": "^8.1.0",
+		"hpp": "^0.2.3",
 		"joi": "^18.0.1",
 		"jsonwebtoken": "^9.0.2",
 		"mongoose": "^8.10.1",
 		"nodemailer": "^6.10.0",
 		"nodemon": "^3.1.9",
 		"swagger-jsdoc": "^6.2.8",
-		"swagger-ui-express": "^5.0.1"
+		"swagger-ui-express": "^5.0.1",
+		"xss-clean": "^0.1.4"
 	},
 	"devDependencies": {
 		"@types/jest": "^30.0.0",

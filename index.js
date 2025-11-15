@@ -1,6 +1,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
 const connectDB = require('./config/db');
@@ -10,8 +15,40 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.json());
-app.use(cors());
+app.use(helmet());
+
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // limit each IP to 100 requests per windowMs
+	message: 'Too many requests from this IP, please try again later.',
+	standardHeaders: true,
+	legacyHeaders: false,
+});
+
+const corsOptions = {
+	origin: function (origin, callback) {
+		if (!origin) return callback(null, true);
+		
+		const allowedOrigins = process.env.ALLOWED_ORIGINS 
+			? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+			: ['http://localhost:3000', 'http://localhost:3001'];
+		
+		if (allowedOrigins.indexOf(origin) !== -1) {
+			callback(null, true);
+		} else {
+			callback(new Error('Not allowed by CORS'));
+		}
+	},
+	credentials: true,
+	optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.use('/api/', limiter);
+app.use(express.json({ limit: '10kb' }));
+app.use(mongoSanitize());
+app.use(hpp());
+app.use(xss());
 
 const jobRoutes = require('./routes/jobRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -19,7 +56,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+app.use('/api-docs', limiter, swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'JobTrackr API Documentation'

@@ -36,6 +36,7 @@ const MESSAGES = {
       INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired token',
       USER_NOT_FOUND: 'User not found',
       INVALID_CURRENT_PASSWORD: 'Invalid current password',
+      ACCOUNT_LOCKED: 'Account has been locked due to too many failed login attempts. Please try again later.',
       NOT_AUTHORIZED_NO_TOKEN: 'Not authorized, no token',
       NOT_AUTHORIZED_TOKEN_FAILED: 'Not authorized, token failed',
       
@@ -82,8 +83,10 @@ const MESSAGES = {
       INVALID_JOB_ID_FORMAT: 'Invalid job ID format',
       
       // Length validation
-      PASSWORD_TOO_SHORT: 'Password must be at least 6 characters long',
-      NEW_PASSWORD_TOO_SHORT: 'New password must be at least 6 characters long',
+      PASSWORD_TOO_SHORT: 'Password must be at least 8 characters long',
+      NEW_PASSWORD_TOO_SHORT: 'New password must be at least 8 characters long',
+      PASSWORD_WEAK: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+      NEW_PASSWORD_WEAK: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
       
       // Enum validation
       INVALID_STATUS: 'Status must be one of: applied, interviewing, offer, rejected',

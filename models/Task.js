@@ -37,8 +37,12 @@ const taskSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Indexes for analytics optimization
-taskSchema.index({ userId: 1, dueDateTime: 1 }); // For upcoming tasks
-taskSchema.index({ userId: 1, completed: 1 }); // For task completion analytics
+// Indexes for query optimization and analytics
+taskSchema.index({ userId: 1 }); // Base index for user queries
+taskSchema.index({ userId: 1, dueDateTime: 1 }); // For upcoming tasks and sorting
+taskSchema.index({ userId: 1, completed: 1 }); // For completion filtering
+taskSchema.index({ userId: 1, taskType: 1 }); // For task type filtering
+// Text index for search across multiple fields
+taskSchema.index({ title: 'text', notes: 'text' });
 
 module.exports = mongoose.model('Task', taskSchema);

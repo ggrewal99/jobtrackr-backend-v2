@@ -38,7 +38,7 @@ describe('Error Handler Tests', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -209,7 +209,7 @@ describe('Error Handler Tests', () => {
 
     it('should handle expired JWT token', async () => {
       const expiredToken = jwt.sign(
-        { id: testUser._id, role: testUser.role },
+        { id: testUser._id },
         process.env.JWT_SECRET,
         { expiresIn: '-1h' }
       );

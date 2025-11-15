@@ -27,7 +27,7 @@ describe('Integration Tests - Complete Workflows', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -510,7 +510,7 @@ describe('Integration Tests - Complete Workflows', () => {
       await secondUser.save();
 
       secondUserToken = jwt.sign(
-        { id: secondUser._id, role: secondUser.role },
+        { id: secondUser._id },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );

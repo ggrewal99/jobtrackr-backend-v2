@@ -33,10 +33,15 @@ const jobSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Indexes for analytics optimization
-jobSchema.index({ userId: 1, dateApplied: -1 }); // For timeline queries
-jobSchema.index({ userId: 1, status: 1 }); // For status breakdown
+// Indexes for query optimization and analytics
+jobSchema.index({ userId: 1 }); // Base index for user queries
+jobSchema.index({ userId: 1, dateApplied: -1 }); // For timeline queries and sorting
+jobSchema.index({ userId: 1, status: 1 }); // For status filtering and breakdown
+jobSchema.index({ userId: 1, company: 1 }); // For company filtering
+jobSchema.index({ userId: 1, position: 1 }); // For position search
 jobSchema.index({ userId: 1, createdAt: -1 }); // For recent applications
 jobSchema.index({ userId: 1, updatedAt: -1 }); // For stage progression
+// Text index for search across multiple fields
+jobSchema.index({ company: 'text', position: 'text', notes: 'text' });
 
 module.exports = mongoose.model('Job', jobSchema);

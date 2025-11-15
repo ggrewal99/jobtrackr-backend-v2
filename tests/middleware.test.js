@@ -27,7 +27,7 @@ describe('Middleware Tests', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -71,7 +71,7 @@ describe('Middleware Tests', () => {
 
     it('should reject request with expired token', async () => {
       const expiredToken = jwt.sign(
-        { id: testUser._id, role: testUser.role },
+        { id: testUser._id },
         process.env.JWT_SECRET,
         { expiresIn: '-1h' } // Expired token
       );

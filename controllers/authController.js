@@ -115,13 +115,46 @@ const loginUser = catchAsync(async (req, res) => {
 		throw new UnauthorizedError(MESSAGES.ERROR.EMAIL_NOT_VERIFIED);
 	}
 
+	// Check if account is locked
+	if (user.accountLockedUntil && user.accountLockedUntil > Date.now()) {
+		const minutesLeft = Math.ceil((user.accountLockedUntil - Date.now()) / 60000);
+		throw new UnauthorizedError(
+			`${MESSAGES.ERROR.ACCOUNT_LOCKED} Account will be unlocked in ${minutesLeft} minute(s).`
+		);
+	}
+
+	// If lockout period has expired, reset failed attempts
+	if (user.accountLockedUntil && user.accountLockedUntil <= Date.now()) {
+		user.failedLoginAttempts = 0;
+		user.accountLockedUntil = undefined;
+		await user.save();
+	}
+
 	const isMatch = await bcrypt.compare(password, user.password);
 	if (!isMatch) {
+		// Increment failed login attempts
+		user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+		// Lock account for 30mins after 5 failed attempts
+		if (user.failedLoginAttempts >= 5) {
+			user.accountLockedUntil = Date.now() + 30 * 60 * 1000;
+			await user.save();
+			throw new UnauthorizedError(
+				`${MESSAGES.ERROR.ACCOUNT_LOCKED} Account will be unlocked in 30 minutes.`
+			);
+		}
+
+		await user.save();
 		throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
 	}
 
+	// Reset failed login attempts on successful login
+	user.failedLoginAttempts = 0;
+	user.accountLockedUntil = undefined;
+	await user.save();
+
 	const token = jwt.sign(
-		{ id: user._id, role: user.role },
+		{ id: user._id },
 		process.env.JWT_SECRET,
 		{
 			expiresIn: '1h',

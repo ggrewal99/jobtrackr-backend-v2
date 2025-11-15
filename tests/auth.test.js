@@ -25,7 +25,7 @@ describe('Auth Endpoints', () => {
 
     // Generate auth token for protected routes
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );

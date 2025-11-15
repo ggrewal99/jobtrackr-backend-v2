@@ -22,9 +22,11 @@ const authValidation = {
           'string.empty': MESSAGES.VALIDATION.EMAIL_REQUIRED,
           'any.required': MESSAGES.VALIDATION.EMAIL_REQUIRED
         }),
-      password: Joi.string().min(6).required()
+      password: Joi.string().min(8).required()
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
         .messages({
           'string.min': MESSAGES.VALIDATION.PASSWORD_TOO_SHORT,
+          'string.pattern.base': MESSAGES.VALIDATION.PASSWORD_WEAK,
           'string.empty': MESSAGES.VALIDATION.PASSWORD_REQUIRED,
           'any.required': MESSAGES.VALIDATION.PASSWORD_REQUIRED
         })
@@ -95,11 +97,13 @@ const authValidation = {
 
   resetPassword: (req, res, next) => {
     const schema = Joi.object({
-      newPassword: Joi.string().min(6).required()
+      newPassword: Joi.string().min(8).required()
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
         .messages({
-          'string.min': MESSAGES.VALIDATION.PASSWORD_TOO_SHORT,
-          'string.empty': MESSAGES.VALIDATION.PASSWORD_REQUIRED,
-          'any.required': MESSAGES.VALIDATION.PASSWORD_REQUIRED
+          'string.min': MESSAGES.VALIDATION.NEW_PASSWORD_TOO_SHORT,
+          'string.pattern.base': MESSAGES.VALIDATION.NEW_PASSWORD_WEAK,
+          'string.empty': MESSAGES.VALIDATION.NEW_PASSWORD_REQUIRED,
+          'any.required': MESSAGES.VALIDATION.NEW_PASSWORD_REQUIRED
         })
     });
     
@@ -117,9 +121,11 @@ const authValidation = {
           'string.empty': MESSAGES.VALIDATION.CURRENT_PASSWORD_REQUIRED,
           'any.required': MESSAGES.VALIDATION.CURRENT_PASSWORD_REQUIRED
         }),
-      newPassword: Joi.string().min(6).required()
+      newPassword: Joi.string().min(8).required()
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
         .messages({
           'string.min': MESSAGES.VALIDATION.NEW_PASSWORD_TOO_SHORT,
+          'string.pattern.base': MESSAGES.VALIDATION.NEW_PASSWORD_WEAK,
           'string.empty': MESSAGES.VALIDATION.NEW_PASSWORD_REQUIRED,
           'any.required': MESSAGES.VALIDATION.NEW_PASSWORD_REQUIRED
         })
@@ -147,9 +153,11 @@ const authValidation = {
           'string.email': MESSAGES.VALIDATION.INVALID_EMAIL_FORMAT,
           'string.empty': MESSAGES.VALIDATION.EMAIL_REQUIRED
         }),
-      password: Joi.string().min(6)
+      password: Joi.string().min(8)
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
         .messages({
           'string.min': MESSAGES.VALIDATION.PASSWORD_TOO_SHORT,
+          'string.pattern.base': MESSAGES.VALIDATION.PASSWORD_WEAK,
           'string.empty': MESSAGES.VALIDATION.PASSWORD_REQUIRED
         })
     });

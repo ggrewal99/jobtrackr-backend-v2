@@ -27,7 +27,7 @@ describe('Edge Cases and Boundary Conditions', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -484,7 +484,7 @@ describe('Edge Cases and Boundary Conditions', () => {
 
     it('should handle expired tokens', async () => {
       const expiredToken = jwt.sign(
-        { id: testUser._id, role: testUser.role },
+        { id: testUser._id },
         process.env.JWT_SECRET,
         { expiresIn: '-1h' }
       );
@@ -499,7 +499,7 @@ describe('Edge Cases and Boundary Conditions', () => {
 
     it('should handle tokens with invalid signature', async () => {
       const invalidToken = jwt.sign(
-        { id: testUser._id, role: testUser.role },
+        { id: testUser._id },
         'wrong-secret',
         { expiresIn: '1h' }
       );

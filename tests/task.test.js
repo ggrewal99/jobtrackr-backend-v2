@@ -26,7 +26,7 @@ describe('Task Endpoints', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { id: testUser._id, role: testUser.role },
+      { id: testUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -88,7 +88,7 @@ describe('Task Endpoints', () => {
       await anotherUser.save();
 
       const anotherToken = jwt.sign(
-        { id: anotherUser._id, role: anotherUser.role },
+        { id: anotherUser._id },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );

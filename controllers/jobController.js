@@ -3,8 +3,63 @@ const { NotFoundError, catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
 
 const getJobs = catchAsync(async (req, res) => {
-	const jobs = await Job.find({ userId: req.user.id });
-	res.status(200).json(jobs);
+	const { page, limit, sortBy, sortOrder, search, status, company, position } = req.query;
+
+	const query = { userId: req.user.id };
+
+	if (status) {
+		query.status = status;
+	}
+
+	if (company) {
+		query.company = company;
+	}
+
+	if (position) {
+		query.position = position;
+	}
+
+	if (search) {
+		query.$or = [
+			{ position: { $regex: search, $options: 'i' } },
+			{ company: { $regex: search, $options: 'i' } },
+			{ notes: { $regex: search, $options: 'i' } },
+		];
+	}
+
+	const pageNum = parseInt(page) || 1;
+	const limitNum = parseInt(limit) || 20;
+	const skip = (pageNum - 1) * limitNum;
+
+	const sortOptions = {};
+	if (sortBy) {
+		const sortFields = ['dateApplied', 'createdAt', 'updatedAt', 'position', 'company', 'status'];
+		if (sortFields.includes(sortBy)) {
+			sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+		}
+	} else {
+		sortOptions.dateApplied = -1;
+	}
+
+	const jobs = await Job.find(query)
+		.sort(sortOptions)
+		.skip(skip)
+		.limit(limitNum)
+		.select('position company status notes dateApplied createdAt updatedAt');
+
+	const totalJobs = await Job.countDocuments(query);
+
+	res.status(200).json({
+		jobs,
+		pagination: {
+			totalItems: totalJobs,
+			itemsPerPage: limitNum,
+			currentPage: pageNum,
+			totalPages: Math.ceil(totalJobs / limitNum),
+			hasNextPage: pageNum < Math.ceil(totalJobs / limitNum),
+			hasPreviousPage: pageNum > 1,
+		},
+	});
 });
 
 const getJob = catchAsync(async (req, res) => {

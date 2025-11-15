@@ -80,6 +80,7 @@ const handleJWTExpiredError = () =>
   new UnauthorizedError('Your token has expired! Please log in again.');
 
 const sendErrorDev = (err, res) => {
+  // In development: show full error details including stack trace for debugging
   res.status(err.statusCode).json({
     status: err.status,
     error: err,
@@ -89,7 +90,8 @@ const sendErrorDev = (err, res) => {
 };
 
 const sendErrorProd = (err, res) => {
-  // Operational, trusted error: send message to client
+  // In production: NEVER expose stack traces or internal error details
+  // Only send safe, user-friendly messages
   if (err.isOperational) {
     res.status(err.statusCode).json({
       status: err.status,

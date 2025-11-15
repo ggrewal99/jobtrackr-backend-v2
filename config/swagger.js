@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'JobTrackr API',
+      title: 'JobTracker API',
       version: '1.0.0',
       description: 'A comprehensive job tracking API for managing job applications, tasks, and analytics',
       contact: {
