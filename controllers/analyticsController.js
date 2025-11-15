@@ -58,8 +58,7 @@ const getDashboard = catchAsync(async (req, res) => {
         })
         .sort({ dueDateTime: 1 })
         .limit(10)
-        .populate('jobId', 'company position')
-        .select('title dueDateTime taskType jobId completed')
+        .select('title dueDateTime taskType completed')
     ]);
 
     const byStatus = {
