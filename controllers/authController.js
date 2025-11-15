@@ -140,7 +140,7 @@ const loginUser = catchAsync(async (req, res) => {
 			user.accountLockedUntil = Date.now() + 30 * 60 * 1000;
 			await user.save();
 			throw new UnauthorizedError(
-				`${MESSAGES.ERROR.ACCOUNT_LOCKED} Account will be unlocked in 30 minutes.`
+				`${MESSAGES.ERROR.ACCOUNT_LOCKED}`
 			);
 		}
 

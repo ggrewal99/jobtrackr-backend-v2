@@ -36,7 +36,7 @@ const MESSAGES = {
       INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired token',
       USER_NOT_FOUND: 'User not found',
       INVALID_CURRENT_PASSWORD: 'Invalid current password',
-      ACCOUNT_LOCKED: 'Account has been locked due to too many failed login attempts. Please try again later.',
+      ACCOUNT_LOCKED: 'Account has been locked due to too many failed login attempts.',
       NOT_AUTHORIZED_NO_TOKEN: 'Not authorized, no token',
       NOT_AUTHORIZED_TOKEN_FAILED: 'Not authorized, token failed',
       
