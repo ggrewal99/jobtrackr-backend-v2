@@ -1,9 +1,9 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = require('../index');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 describe('Job Endpoints', () => {
   let testUser;
@@ -215,7 +215,10 @@ describe('Job Endpoints', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(jobData)
         .expect(400);
+
+        expect(response.body.message).toContain('Status must be one of: applied, interviewing, offer, rejected');
     });
+    
 
     it('should return 400 for missing required fields', async () => {
       const jobData = {
@@ -228,6 +231,8 @@ describe('Job Endpoints', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(jobData)
         .expect(400);
+
+        expect(response.body.message).toContain('Company is required');
     });
 
     it('should return 401 without token', async () => {

@@ -26,18 +26,19 @@ const limiter = rateLimit({
 });
 
 const corsOptions = {
-	origin: function (origin, callback) {
-		if (!origin) return callback(null, true);
+	origin (origin, callback) {
+		if (!origin){
+			return callback(null, true);
+		} 
 		
 		const allowedOrigins = process.env.ALLOWED_ORIGINS 
-			? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+			? process.env.ALLOWED_ORIGINS.split(',').map(orig => orig.trim())
 			: ['http://localhost:3000', 'http://localhost:3001'];
 		
 		if (allowedOrigins.indexOf(origin) !== -1) {
-			callback(null, true);
-		} else {
-			callback(new Error('Not allowed by CORS'));
+			return callback(null, true);
 		}
+		return callback(new Error('Not allowed by CORS'));
 	},
 	credentials: true,
 	optionsSuccessStatus: 200
@@ -74,9 +75,14 @@ app.use(globalErrorHandler);
 // Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
 	const PORT = process.env.PORT || 5000;
-	app.listen(PORT, () => {
-		connectDB();
-		console.log(`Server is running on port ${PORT}`);
+	app.listen(PORT, async () => {
+		try {
+			await connectDB();
+			console.log(`Server is running on port ${PORT}`);
+		} catch (err) {
+			console.error(err.message);
+			throw err;
+		}
 	});
 }
 

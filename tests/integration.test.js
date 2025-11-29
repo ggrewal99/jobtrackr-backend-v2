@@ -1,10 +1,11 @@
 const request = require('supertest');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = require('../index');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Task = require('../models/Task');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 // Mock the email utility
 jest.mock('../utils/sendEmail', () => jest.fn(() => Promise.resolve()));
@@ -185,8 +186,7 @@ describe('Integration Tests - Complete Workflows', () => {
         }
       ];
 
-      const createdJobs = [];
-      for (const jobData of jobsData) {
+      await Promise.all(jobsData.map(async (jobData) => {
         const response = await request(app)
           .post('/api/jobs')
           .set('Authorization', `Bearer ${authToken}`)
@@ -194,7 +194,7 @@ describe('Integration Tests - Complete Workflows', () => {
           .expect(201);
 
         expect(response.body.message).toBe('Job created successfully');
-      }
+      }));
 
       // Step 2: Get all jobs
       const getJobsResponse = await request(app)
@@ -337,8 +337,7 @@ describe('Integration Tests - Complete Workflows', () => {
         }
       ];
 
-      const createdTasks = [];
-      for (const taskData of tasksData) {
+      await Promise.all(tasksData.map(async (taskData) => {
         const response = await request(app)
           .post('/api/tasks')
           .set('Authorization', `Bearer ${authToken}`)
@@ -346,7 +345,7 @@ describe('Integration Tests - Complete Workflows', () => {
           .expect(201);
 
         expect(response.body.message).toBe('Task created successfully');
-      }
+      }));
 
       // Step 2: Get all tasks (should be sorted by dueDateTime)
       const getTasksResponse = await request(app)
@@ -455,7 +454,6 @@ describe('Integration Tests - Complete Workflows', () => {
       expect(user.resetPasswordExpires).toBeDefined();
 
       // Step 3: Generate reset token (simulating the token from email)
-      const crypto = require('crypto');
       const resetToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
       

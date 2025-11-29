@@ -1,8 +1,8 @@
+const mongoose = require('mongoose');
 const Job = require('../models/Job');
 const Task = require('../models/Task');
-const { catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
-const mongoose = require('mongoose');
+const { catchAsync } = require('../utils/errorHandler');
 
 /**
  * Get comprehensive dashboard analytics
@@ -10,8 +10,8 @@ const mongoose = require('mongoose');
  */
 const getDashboard = catchAsync(async (req, res) => {
     const userId = mongoose.Types.ObjectId.createFromHexString(req.user.id);
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -29,7 +29,7 @@ const getDashboard = catchAsync(async (req, res) => {
         Job.countDocuments({ userId }),
         
         Job.aggregate([
-            { $match: { userId: userId } },
+            { $match: { userId } },
             { $group: { _id: '$status', count: { $sum:1 } } },
             { $sort: { count: -1 } } 
         ]),
@@ -69,7 +69,7 @@ const getDashboard = catchAsync(async (req, res) => {
     };
     
     statusBreakdown.forEach(item => {
-        if (byStatus.hasOwnProperty(item._id)) {
+        if (item._id in byStatus) {
             byStatus[item._id] = item.count;
         }
     });
@@ -94,7 +94,7 @@ const getTimeline = catchAsync(async (req, res) => {
     const userId = req.user.id;
     const { period = 'daily' } = req.query;
     
-    let groupBy, dateFormat;
+    let groupBy;
     const now = new Date();
     let startDate;
 
@@ -107,7 +107,6 @@ const getTimeline = catchAsync(async (req, res) => {
                 month: { $month: '$dateApplied' },
                 day: { $dayOfMonth: '$dateApplied' }
             };
-            dateFormat = '%Y-%m-%d';
             break;
         case 'monthly':
             startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year
@@ -115,7 +114,6 @@ const getTimeline = catchAsync(async (req, res) => {
                 year: { $year: '$dateApplied' },
                 month: { $month: '$dateApplied' }
             };
-            dateFormat = '%Y-%m';
             break;
         default: // weekly
             startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); // 3 months
@@ -123,13 +121,12 @@ const getTimeline = catchAsync(async (req, res) => {
                 year: { $year: '$dateApplied' },
                 week: { $week: '$dateApplied' }
             };
-            dateFormat = '%Y-W%U';
     }
 
     const timelineData = await Job.aggregate([
         {
             $match: {
-                userId: userId,
+                userId,
                 dateApplied: { $gte: startDate }
             }
         },
@@ -153,17 +150,24 @@ const getTimeline = catchAsync(async (req, res) => {
         }
     ]);
 
+    const formatPeriod = (item, periodType) => {
+        if (periodType === 'daily') {
+            return `${item._id.year}-${String(item._id.month).padStart(2, '0')}-${String(item._id.day).padStart(2, '0')}`;
+        }
+        if (periodType === 'monthly') {
+            return `${item._id.year}-${String(item._id.month).padStart(2, '0')}`;
+        }
+        // weekly (default)
+        return `${item._id.year}-W${String(item._id.week).padStart(2, '0')}`;
+    };
+
     res.status(200).json({
         success: true,
         message: MESSAGES.SUCCESS.ANALYTICS_RETRIEVED,
         data: {
             period,
             timeline: timelineData.map(item => ({
-                period: period === 'daily' 
-                    ? `${item._id.year}-${String(item._id.month).padStart(2, '0')}-${String(item._id.day).padStart(2, '0')}`
-                    : period === 'monthly'
-                    ? `${item._id.year}-${String(item._id.month).padStart(2, '0')}`
-                    : `${item._id.year}-W${String(item._id.week).padStart(2, '0')}`,
+                period: formatPeriod(item, period),
                 applications: item.applications,
                 interviews: item.interviews,
                 offers: item.offers,
@@ -189,7 +193,7 @@ const getInsights = catchAsync(async (req, res) => {
     ] = await Promise.all([
         // Average time between application stages
         Job.aggregate([
-            { $match: { userId: userId } },
+            { $match: { userId } },
             { $sort: { dateApplied: 1 } },
             {
                 $group: {
@@ -218,7 +222,7 @@ const getInsights = catchAsync(async (req, res) => {
 
         // Success rate by day of week
         Job.aggregate([
-            { $match: { userId: userId } },
+            { $match: { userId } },
             {
                 $group: {
                     _id: { $dayOfWeek: '$dateApplied' },
@@ -251,7 +255,7 @@ const getInsights = catchAsync(async (req, res) => {
         Job.aggregate([
             { 
                 $match: { 
-                    userId: userId,
+                    userId,
                     dateApplied: { $gte: thirtyDaysAgo }
                 } 
             },

@@ -1,10 +1,8 @@
 const request = require('supertest');
-const app = require('../index');
-const User = require('../models/User');
-const Job = require('../models/Job');
-const Task = require('../models/Task');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const app = require('../index');
+const User = require('../models/User');
 const { 
   AppError, 
   ValidationError, 
@@ -579,7 +577,7 @@ describe('Error Handler Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         status: 'fail',
-        error: error,
+        error,
         message: 'Test error',
         stack: error.stack
       });

@@ -21,12 +21,11 @@ beforeAll(async () => {
 
 // Cleanup after each test
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
+  const {collections} = mongoose.connection;
   
-  for (const key in collections) {
-    const collection = collections[key];
+  await Promise.all(Object.values(collections).map(async (collection) => {
     await collection.deleteMany({});
-  }
+  }));
 });
 
 // Cleanup after all tests

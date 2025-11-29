@@ -1,10 +1,10 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = require('../index');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Task = require('../models/Task');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 // Mock the email utility
 jest.mock('../utils/sendEmail', () => jest.fn(() => Promise.resolve()));
@@ -140,7 +140,7 @@ describe('Edge Cases and Boundary Conditions', () => {
         '9999-12-31T23:59:59.999Z'  // Far future
       ];
 
-      for (const date of edgeDates) {
+      await Promise.all(edgeDates.map(async (date) => {
         const jobData = {
           position: `Job for ${date}`,
           status: 'applied',
@@ -155,7 +155,7 @@ describe('Edge Cases and Boundary Conditions', () => {
           .expect(201);
 
         expect(response.body.message).toBe('Job created successfully');
-      }
+      }));
     });
   });
 
@@ -307,7 +307,7 @@ describe('Edge Cases and Boundary Conditions', () => {
     it('should handle concurrent job creation', async () => {
       const jobPromises = [];
       
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i+=1) {
         const jobData = {
           position: `Concurrent Job ${i}`,
           status: 'applied',
@@ -338,7 +338,7 @@ describe('Edge Cases and Boundary Conditions', () => {
     it('should handle concurrent task creation', async () => {
       const taskPromises = [];
       
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i+=1) {
         const taskData = {
           title: `Concurrent Task ${i}`,
           dueDateTime: new Date(Date.now() + i * 60000).toISOString(),
@@ -370,7 +370,7 @@ describe('Edge Cases and Boundary Conditions', () => {
   describe('Memory and Performance Edge Cases', () => {
     it('should handle large number of jobs efficiently', async () => {
       // Create 100 jobs
-      for (let i = 0; i < 100; i++) {
+      await Promise.all(Array.from({ length: 100 }, async (_, i) => {
         const jobData = {
           position: `Job ${i}`,
           status: 'applied',
@@ -382,7 +382,7 @@ describe('Edge Cases and Boundary Conditions', () => {
           .set('Authorization', `Bearer ${authToken}`)
           .send(jobData)
           .expect(201);
-      }
+      }));
 
       // Get all jobs should still work efficiently
       const response = await request(app)
@@ -395,19 +395,19 @@ describe('Edge Cases and Boundary Conditions', () => {
 
     it('should handle large number of tasks efficiently', async () => {
       // Create 100 tasks
-      for (let i = 0; i < 100; i++) {
+      await Promise.all(Array.from({ length: 100 }, async (_, i) => {
         const taskData = {
           title: `Task ${i}`,
-          dueDateTime: new Date(Date.now() + i * 60000).toISOString(),
-          taskType: 'other'
-        };
-        
-        await request(app)
-          .post('/api/tasks')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send(taskData)
-          .expect(201);
-      }
+        dueDateTime: new Date(Date.now() + i * 60000).toISOString(),
+        taskType: 'other'
+      };
+      
+      await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(taskData)
+        .expect(201);
+      }));
 
       // Get all tasks should still work efficiently and be sorted
       const response = await request(app)
@@ -418,7 +418,7 @@ describe('Edge Cases and Boundary Conditions', () => {
       expect(response.body.length).toBe(100);
       
       // Verify sorting by dueDateTime
-      for (let i = 1; i < response.body.length; i++) {
+      for (let i = 1; i < response.body.length; i+=1) {
         const prevDate = new Date(response.body[i - 1].dueDateTime);
         const currDate = new Date(response.body[i].dueDateTime);
         expect(prevDate.getTime()).toBeLessThanOrEqual(currDate.getTime());
@@ -472,14 +472,14 @@ describe('Edge Cases and Boundary Conditions', () => {
         'Bearer not.a.valid.jwt.token'
       ];
 
-      for (const token of malformedTokens) {
+      await Promise.all(malformedTokens.map(async (token) => {
         const response = await request(app)
           .get('/api/jobs')
           .set('Authorization', token)
           .expect(401);
 
         expect(['Not authorized, token failed', 'Not authorized, no token']).toContain(response.body.message);
-      }
+      }));
     });
 
     it('should handle expired tokens', async () => {

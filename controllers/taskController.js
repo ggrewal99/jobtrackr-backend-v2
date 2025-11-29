@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
-const { NotFoundError, ValidationError, catchAsync } = require('../utils/errorHandler');
+const { NotFoundError } = require('../utils/errors');
+const { catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
 
 const getTasks = catchAsync(async (req, res) => {
@@ -63,7 +64,7 @@ const updateTask = catchAsync(async (req, res) => {
 	await task.save();
 	res.status(200).json({
 		message: MESSAGES.SUCCESS.TASK_UPDATED,
-		task: task,
+		task,
 	});
 });
 

@@ -1,10 +1,10 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = require('../index');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Task = require('../models/Task');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 // Mock the email utility
 jest.mock('../utils/sendEmail', () => jest.fn(() => Promise.resolve()));
@@ -418,11 +418,11 @@ describe('Middleware Tests', () => {
       it('should pass validation with all valid task types', async () => {
         const taskTypes = ['follow-up', 'interview', 'networking', 'research', 'other'];
         
-        for (const taskType of taskTypes) {
+        await Promise.all(taskTypes.map(async (taskType) => {
           const taskData = {
             title: `Task for ${taskType}`,
             dueDateTime: '2024-01-25T10:00:00Z',
-            taskType: taskType
+            taskType
           };
 
           const response = await request(app)
@@ -432,7 +432,7 @@ describe('Middleware Tests', () => {
             .expect(201);
 
           expect(response.body.message).toBe('Task created successfully');
-        }
+        }));
       });
     });
 
@@ -534,6 +534,8 @@ describe('Middleware Tests', () => {
         .get('/api/jobs/')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200); // Route exists but returns empty array
+
+        expect(response.body.message).toContain('Invalid ID format');
     });
 
     it('should fail validation with too short ID', async () => {

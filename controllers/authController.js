@@ -1,15 +1,16 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+const sendEmail = require('../utils/sendEmail');
+
 const { 
 	NotFoundError, 
 	UnauthorizedError, 
 	ConflictError, 
-	ValidationError,
-	catchAsync 
-} = require('../utils/errorHandler');
+	ValidationError
+} = require('../utils/errors');
+const { catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
 
 const registerUser = catchAsync(async (req, res) => {
@@ -188,7 +189,7 @@ const updateUser = catchAsync(async (req, res) => {
 		const user = await User.findById(userId);
 		return res.status(200).json({
 		  message: MESSAGES.SUCCESS.USER_UPDATED,
-		  user: user,
+		  user,
 		});
 	}
 
@@ -200,7 +201,7 @@ const updateUser = catchAsync(async (req, res) => {
 		throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
 	}
 
-	res.status(200).json({
+	return res.status(200).json({
 		message: MESSAGES.SUCCESS.USER_UPDATED,
 		user: updatedUser,
 	});

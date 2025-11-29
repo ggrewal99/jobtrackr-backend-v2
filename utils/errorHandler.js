@@ -1,56 +1,9 @@
-// Custom Error Classes
-class AppError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-class ValidationError extends AppError {
-  constructor(message) {
-    super(message, 400);
-    this.name = 'ValidationError';
-  }
-}
-
-class NotFoundError extends AppError {
-  constructor(message = 'Resource not found') {
-    super(message, 404);
-    this.name = 'NotFoundError';
-  }
-}
-
-class UnauthorizedError extends AppError {
-  constructor(message = 'Unauthorized access') {
-    super(message, 401);
-    this.name = 'UnauthorizedError';
-  }
-}
-
-class ForbiddenError extends AppError {
-  constructor(message = 'Forbidden access') {
-    super(message, 403);
-    this.name = 'ForbiddenError';
-  }
-}
-
-class ConflictError extends AppError {
-  constructor(message = 'Resource already exists') {
-    super(message, 409);
-    this.name = 'ConflictError';
-  }
-}
-
-class UnprocessableEntityError extends AppError {
-  constructor(message = 'Invalid data provided') {
-    super(message, 422);
-    this.name = 'UnprocessableEntityError';
-  }
-}
+// Import error classes from errors folder
+const {
+  ValidationError,
+  UnauthorizedError,
+  ConflictError
+} = require('./errors');
 
 // Error handling middleware
 const handleCastErrorDB = (err) => {
@@ -90,7 +43,7 @@ const sendErrorDev = (err, res) => {
 };
 
 const sendErrorProd = (err, res) => {
-  // In production: NEVER expose stack traces or internal error details
+  // Does not expose stack traces or internal error details when in production
   // Only send safe, user-friendly messages
   if (err.isOperational) {
     res.status(err.statusCode).json({
@@ -98,7 +51,7 @@ const sendErrorProd = (err, res) => {
       message: err.message
     });
   } else {
-    // Programming or other unknown error: don't leak error details
+    // Does not leak error details when in production
     console.error('ERROR ->', err);
     res.status(500).json({
       status: 'error',
@@ -107,65 +60,61 @@ const sendErrorProd = (err, res) => {
   }
 };
 
-const globalErrorHandler = (err, req, res, next) => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
+const globalErrorHandler = (err, _req, res, _next) => {
+  const error = {
+    statusCode: err.statusCode || 500,
+    status: err.status || 'error',
+    message: err.message,
+    isOperational: err.isOperational,
+    name: err.name,
+    code: err.code,
+    path: err.path,
+    value: err.value,
+    errors: err.errors,
+    errmsg: err.errmsg,
+    stack: err.stack
+  };
 
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, res);
+    sendErrorDev(error, res);
   } else if (process.env.NODE_ENV === 'test') {
     // In test mode, handle JWT errors and send simplified error response
-    let error = err;
+    let processedError = error;
     
-    if (err.name === 'JsonWebTokenError') error = handleJWTError();
-    if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
+    if (error.name === 'JsonWebTokenError') processedError = handleJWTError();
+    if (error.name === 'TokenExpiredError') processedError = handleJWTExpiredError();
     
-    if (error.isOperational) {
-      res.status(error.statusCode).json({
-        status: error.status,
-        message: error.message
+    if (processedError.isOperational) {
+      res.status(processedError.statusCode).json({
+        status: processedError.status,
+        message: processedError.message
       });
     } else {
-      console.error('ERROR ->', err);
+      console.error('ERROR ->', error);
       res.status(500).json({
         status: 'error',
         message: 'Something went wrong!'
       });
     }
   } else {
-    let error = { ...err };
-    error.message = err.message;
-    error.statusCode = err.statusCode;
-    error.status = err.status;
-    error.isOperational = err.isOperational;
-    error.name = err.name;
-    error.code = err.code;
+    let processedError = error;
 
-    if (error.name === 'CastError') error = handleCastErrorDB(error);
-    if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-    if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
-    if (error.name === 'JsonWebTokenError') error = handleJWTError();
-    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
+    if (processedError.name === 'CastError') processedError = handleCastErrorDB(processedError);
+    if (processedError.code === 11000) processedError = handleDuplicateFieldsDB(processedError);
+    if (processedError.name === 'ValidationError') processedError = handleValidationErrorDB(processedError);
+    if (processedError.name === 'JsonWebTokenError') processedError = handleJWTError();
+    if (processedError.name === 'TokenExpiredError') processedError = handleJWTExpiredError();
 
-    sendErrorProd(error, res);
+    sendErrorProd(processedError, res);
   }
 };
 
 // Async error wrapper
-const catchAsync = (fn) => {
-  return (req, res, next) => {
+const catchAsync = (fn) => (req, res, next) => {
     fn(req, res, next).catch(next);
   };
-};
 
 module.exports = {
-  AppError,
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
-  ForbiddenError,
-  ConflictError,
-  UnprocessableEntityError,
   globalErrorHandler,
   catchAsync
 };

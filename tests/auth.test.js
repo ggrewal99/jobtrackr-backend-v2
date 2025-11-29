@@ -1,8 +1,9 @@
 const request = require('supertest');
-const app = require('../index');
-const User = require('../models/User');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const app = require('../index');
+const User = require('../models/User');
 
 // Mock the email utility
 jest.mock('../utils/sendEmail', () => jest.fn(() => Promise.resolve()));
@@ -102,6 +103,8 @@ describe('Auth Endpoints', () => {
         .post('/api/auth/register')
         .send(userData)
         .expect(400);
+
+      expect(response.body.message).toContain('Email is required');
     });
 
     it('should return 400 for invalid email format', async () => {
@@ -461,7 +464,6 @@ describe('Auth Endpoints', () => {
 
     beforeEach(async () => {
       // Set up reset token for test user
-      const crypto = require('crypto');
       resetToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
       

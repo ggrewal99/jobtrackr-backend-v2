@@ -1,5 +1,6 @@
 const Job = require('../models/Job');
-const { NotFoundError, catchAsync } = require('../utils/errorHandler');
+const { NotFoundError } = require('../utils/errors');
+const { catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
 
 const getJobs = catchAsync(async (req, res) => {
@@ -27,8 +28,8 @@ const getJobs = catchAsync(async (req, res) => {
 		];
 	}
 
-	const pageNum = parseInt(page) || 1;
-	const limitNum = parseInt(limit) || 20;
+	const pageNum = parseInt(page, 10) || 1;
+	const limitNum = parseInt(limit, 10) || 20;
 	const skip = (pageNum - 1) * limitNum;
 
 	const sortOptions = {};
@@ -114,7 +115,7 @@ const updateJob = catchAsync(async (req, res) => {
 	
 	res.status(200).json({
 		message: MESSAGES.SUCCESS.JOB_UPDATED,
-		job: job
+		job,
 	});
 });
 

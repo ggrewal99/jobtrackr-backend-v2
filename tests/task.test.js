@@ -1,10 +1,10 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = require('../index');
 const Task = require('../models/Task');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 describe('Task Endpoints', () => {
   let testUser;
@@ -255,6 +255,8 @@ describe('Task Endpoints', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(taskData)
         .expect(400);
+
+        expect(response.body.message).toContain('Task type must be one of: follow-up, interview, networking, research, other');
     });
 
     it('should return 400 for missing required fields', async () => {
@@ -268,6 +270,8 @@ describe('Task Endpoints', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(taskData)
         .expect(400);
+
+        expect(response.body.message).toContain('Due date and time is required');
     });
 
     it('should return 401 without token', async () => {

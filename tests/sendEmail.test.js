@@ -1,3 +1,4 @@
+const nodemailer = require('nodemailer');
 const sendEmail = require('../utils/sendEmail');
 
 // Mock nodemailer
@@ -14,8 +15,6 @@ describe('SendEmail Utility Tests', () => {
     mockTransporter = {
       sendMail: mockSendMail,
     };
-    
-    const nodemailer = require('nodemailer');
     nodemailer.createTransport.mockReturnValue(mockTransporter);
   });
 
@@ -60,7 +59,6 @@ describe('SendEmail Utility Tests', () => {
 
       await sendEmail(emailOptions);
 
-      const nodemailer = require('nodemailer');
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         service: 'Gmail',
         auth: {
@@ -91,7 +89,7 @@ describe('SendEmail Utility Tests', () => {
         }
       ];
 
-      for (const testCase of testCases) {
+      await Promise.all(testCases.map(async (testCase) => {
         const result = await sendEmail(testCase);
         expect(result.success).toBe(true);
         expect(mockTransporter.sendMail).toHaveBeenCalledWith({
@@ -100,13 +98,12 @@ describe('SendEmail Utility Tests', () => {
           subject: testCase.subject,
           html: testCase.message
         });
-      }
+      }));
     });
   });
 
   describe('Error Handling', () => {
     it('should handle transporter creation error', async () => {
-      const nodemailer = require('nodemailer');
       nodemailer.createTransport.mockImplementation(() => {
         throw new Error('Transporter creation failed');
       });
@@ -275,7 +272,6 @@ describe('SendEmail Utility Tests', () => {
 
       await sendEmail(emailOptions);
 
-      const nodemailer = require('nodemailer');
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         service: 'Gmail',
         auth: {

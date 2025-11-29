@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { ValidationError } = require('../utils/errorHandler');
+const { ValidationError } = require('../utils/errors');
 const { MESSAGES } = require('../constants/messages');
 
 // Auth validation schemas
@@ -23,7 +23,7 @@ const authValidation = {
           'any.required': MESSAGES.VALIDATION.EMAIL_REQUIRED
         }),
       password: Joi.string().min(8).required()
-        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])/)
         .messages({
           'string.min': MESSAGES.VALIDATION.PASSWORD_TOO_SHORT,
           'string.pattern.base': MESSAGES.VALIDATION.PASSWORD_WEAK,
@@ -36,7 +36,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   login: (req, res, next) => {
@@ -58,7 +58,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   resendVerification: (req, res, next) => {
@@ -75,7 +75,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   requestPasswordReset: (req, res, next) => {
@@ -92,13 +92,13 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   resetPassword: (req, res, next) => {
     const schema = Joi.object({
       newPassword: Joi.string().min(8).required()
-        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])/)
         .messages({
           'string.min': MESSAGES.VALIDATION.NEW_PASSWORD_TOO_SHORT,
           'string.pattern.base': MESSAGES.VALIDATION.NEW_PASSWORD_WEAK,
@@ -111,7 +111,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   changePassword: (req, res, next) => {
@@ -122,7 +122,7 @@ const authValidation = {
           'any.required': MESSAGES.VALIDATION.CURRENT_PASSWORD_REQUIRED
         }),
       newPassword: Joi.string().min(8).required()
-        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])/)
         .messages({
           'string.min': MESSAGES.VALIDATION.NEW_PASSWORD_TOO_SHORT,
           'string.pattern.base': MESSAGES.VALIDATION.NEW_PASSWORD_WEAK,
@@ -135,7 +135,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   updateUser: (req, res, next) => {
@@ -154,7 +154,7 @@ const authValidation = {
           'string.empty': MESSAGES.VALIDATION.EMAIL_REQUIRED
         }),
       password: Joi.string().min(8)
-        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])'))
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>])/)
         .messages({
           'string.min': MESSAGES.VALIDATION.PASSWORD_TOO_SHORT,
           'string.pattern.base': MESSAGES.VALIDATION.PASSWORD_WEAK,
@@ -166,7 +166,7 @@ const authValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   }
 };
 
@@ -203,7 +203,7 @@ const jobValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   update: (req, res, next) => {
@@ -234,7 +234,7 @@ const jobValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   }
 };
 
@@ -269,7 +269,7 @@ const taskValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   },
 
   update: (req, res, next) => {
@@ -298,7 +298,7 @@ const taskValidation = {
     if (error) {
       return next(new ValidationError(error.details[0].message));
     }
-    next();
+    return next();
   }
 };
 
@@ -310,7 +310,7 @@ const validateObjectId = (req, res, next) => {
     return next(new ValidationError(MESSAGES.VALIDATION.INVALID_ID_FORMAT));
   }
   
-  next();
+  return next();
 };
 
 // Array validation for bulk operations
@@ -335,7 +335,7 @@ const validateIdArray = (req, res, next) => {
     }
     return next(new ValidationError(error.details[0].message));
   }
-  next();
+  return next();
 };
 
 module.exports = {
