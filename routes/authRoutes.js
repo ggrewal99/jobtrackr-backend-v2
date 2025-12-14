@@ -12,6 +12,8 @@ const {
 	requestPasswordReset,
 	resetPassword,
 	changePassword,
+	refreshToken,
+	logout,
 } = require('../controllers/authController');
 
 /**
@@ -44,7 +46,7 @@ const {
  *           type: string
  *           description: User last name
  *           example: Doe
- *     
+ *
  *     LoginRequest:
  *       type: object
  *       required:
@@ -60,7 +62,7 @@ const {
  *           type: string
  *           description: User password
  *           example: password123
- *     
+ *
  *     UpdateUserRequest:
  *       type: object
  *       properties:
@@ -72,7 +74,7 @@ const {
  *           type: string
  *           description: User last name
  *           example: Doe
- *     
+ *
  *     ChangePasswordRequest:
  *       type: object
  *       required:
@@ -88,7 +90,7 @@ const {
  *           minLength: 8
  *           description: New password (min 8 characters)
  *           example: newpassword123
- *     
+ *
  *     ForgotPasswordRequest:
  *       type: object
  *       required:
@@ -99,7 +101,7 @@ const {
  *           format: email
  *           description: User email address
  *           example: user@example.com
- *     
+ *
  *     ResetPasswordRequest:
  *       type: object
  *       required:
@@ -115,26 +117,31 @@ const {
  *           minLength: 8
  *           description: New password (min 8 characters)
  *           example: newpassword123
- *     
+ *
  *     AuthResponse:
  *       type: object
  *       properties:
- *         success:
- *           type: boolean
- *           example: true
- *         message:
+ *         accessToken:
  *           type: string
- *           example: User registered successfully
- *         data:
+ *           description: JWT access token (expires in 15 minutes)
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *         refreshToken:
+ *           type: string
+ *           description: JWT refresh token (expires in 7 days)
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *         user:
  *           type: object
  *           properties:
- *             user:
- *               $ref: '#/components/schemas/User'
- *             token:
+ *             firstName:
  *               type: string
- *               description: JWT authentication token
- *               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *     
+ *             lastName:
+ *               type: string
+ *             email:
+ *               type: string
+ *         message:
+ *           type: string
+ *           example: Login successful
+ *
  *     VerifyEmailQuery:
  *       type: object
  *       required:
@@ -457,5 +464,92 @@ router.post('/forgot-password', authValidation.requestPasswordReset, requestPass
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/reset-password', authValidation.resetPassword, resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Get a new access token using a valid refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Refresh token received during login
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: New access token
+ *                 message:
+ *                   type: string
+ *                   example: Token refreshed successfully
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/refresh', refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     description: Invalidate refresh token and logout user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Logged out successfully
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/logout', protect, logout);
 
 module.exports = router;

@@ -4,12 +4,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
-const { 
-	NotFoundError, 
-	UnauthorizedError, 
-	ConflictError, 
-	ValidationError
-} = require('../utils/errors');
+const { NotFoundError, UnauthorizedError, ConflictError, ValidationError } = require('../utils/errors');
 const { catchAsync } = require('../utils/errorHandler');
 const { MESSAGES } = require('../constants/messages');
 
@@ -31,11 +26,7 @@ const registerUser = catchAsync(async (req, res) => {
 		password: hashedPassword,
 	});
 
-	const token = jwt.sign(
-		{ email: newUser.email },
-		process.env.JWT_SECRET,
-		{ expiresIn: '1h' }
-	);
+	const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 	await newUser.save();
 
@@ -46,9 +37,9 @@ const registerUser = catchAsync(async (req, res) => {
 		message: `<p>Click <a href="${verificationUrl}">here</a> to verify your account</p>`,
 	});
 
-	res.status(201).json({ 
+	res.status(201).json({
 		status: 'success',
-		message: MESSAGES.SUCCESS.USER_REGISTERED 
+		message: MESSAGES.SUCCESS.USER_REGISTERED,
 	});
 });
 
@@ -64,6 +55,7 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
 		throw new ValidationError(MESSAGES.ERROR.EMAIL_ALREADY_VERIFIED);
 	}
 
+	// Email verification token (24 hours - more user-friendly)
 	const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
 		expiresIn: '1h',
 	});
@@ -75,9 +67,9 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
 		message: `<p>Click <a href="${verificationUrl}">here</a> to verify your account</p>`,
 	});
 
-	res.json({ 
+	res.json({
 		status: 'success',
-		message: MESSAGES.SUCCESS.VERIFICATION_EMAIL_SENT 
+		message: MESSAGES.SUCCESS.VERIFICATION_EMAIL_SENT,
 	});
 });
 
@@ -140,9 +132,7 @@ const loginUser = catchAsync(async (req, res) => {
 		if (user.failedLoginAttempts >= 5) {
 			user.accountLockedUntil = Date.now() + 30 * 60 * 1000;
 			await user.save();
-			throw new UnauthorizedError(
-				`${MESSAGES.ERROR.ACCOUNT_LOCKED}`
-			);
+			throw new UnauthorizedError(`${MESSAGES.ERROR.ACCOUNT_LOCKED}`);
 		}
 
 		await user.save();
@@ -152,18 +142,25 @@ const loginUser = catchAsync(async (req, res) => {
 	// Reset failed login attempts on successful login
 	user.failedLoginAttempts = 0;
 	user.accountLockedUntil = undefined;
+
+	// Generate access token (short-lived: 15 minutes)
+	const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+		expiresIn: '15m',
+	});
+
+	// Generate refresh token (long-lived: 7 days)
+	const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+		expiresIn: '7d',
+	});
+
+	// Store refresh token in database
+	user.refreshToken = refreshToken;
+	user.refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 	await user.save();
 
-	const token = jwt.sign(
-		{ id: user._id },
-		process.env.JWT_SECRET,
-		{
-			expiresIn: '1h',
-		}
-	);
-
 	res.status(200).json({
-		token,
+		accessToken,
+		refreshToken,
 		user: {
 			firstName: user.firstName,
 			lastName: user.lastName,
@@ -188,8 +185,8 @@ const updateUser = catchAsync(async (req, res) => {
 	if (Object.keys(updates).length === 0) {
 		const user = await User.findById(userId);
 		return res.status(200).json({
-		  message: MESSAGES.SUCCESS.USER_UPDATED,
-		  user,
+			message: MESSAGES.SUCCESS.USER_UPDATED,
+			user,
 		});
 	}
 
@@ -216,10 +213,7 @@ const requestPasswordReset = catchAsync(async (req, res) => {
 	}
 
 	const resetToken = crypto.randomBytes(32).toString('hex');
-	const hashedToken = crypto
-		.createHash('sha256')
-		.update(resetToken)
-		.digest('hex');
+	const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
 	user.resetPasswordToken = hashedToken;
 	user.resetPasswordExpires = Date.now() + 3600000;
@@ -243,10 +237,7 @@ const resetPassword = catchAsync(async (req, res) => {
 	const { token } = req.query;
 	const { newPassword } = req.body;
 
-	const hashedToken = crypto
-		.createHash('sha256')
-		.update(token)
-		.digest('hex');
+	const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 	const user = await User.findOne({
 		resetPasswordToken: hashedToken,
 		resetPasswordExpires: { $gt: Date.now() },
@@ -261,9 +252,13 @@ const resetPassword = catchAsync(async (req, res) => {
 	user.resetPasswordToken = undefined;
 	user.resetPasswordExpires = undefined;
 
+	// Invalidate refresh token on password reset for security
+	user.refreshToken = undefined;
+	user.refreshTokenExpires = undefined;
+
 	await user.save();
 
-	res.json({ 
+	res.json({
 		status: 'success',
 		message: MESSAGES.SUCCESS.PASSWORD_RESET_SUCCESS,
 	});
@@ -286,11 +281,75 @@ const changePassword = catchAsync(async (req, res) => {
 	const salt = await bcrypt.genSalt(10);
 	user.password = await bcrypt.hash(newPassword, salt);
 
+	// Invalidate refresh token on password change for security
+	user.refreshToken = undefined;
+	user.refreshTokenExpires = undefined;
+
 	await user.save();
 
-	res.json({ 
+	res.json({
 		status: 'success',
 		message: MESSAGES.SUCCESS.PASSWORD_CHANGED,
+	});
+});
+
+const refreshToken = catchAsync(async (req, res) => {
+	const { refreshToken: token } = req.body;
+
+	if (!token) {
+		throw new UnauthorizedError('Refresh token is required');
+	}
+
+	try {
+		// Verify refresh token
+		const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+
+		// Find user and verify refresh token matches
+		const user = await User.findById(decoded.id);
+		if (!user || user.refreshToken !== token) {
+			throw new UnauthorizedError('Invalid refresh token');
+		}
+
+		// Check if refresh token has expired
+		if (user.refreshTokenExpires && user.refreshTokenExpires < new Date()) {
+			// Clear expired refresh token
+			user.refreshToken = undefined;
+			user.refreshTokenExpires = undefined;
+			await user.save();
+			throw new UnauthorizedError('Refresh token has expired');
+		}
+
+		// Generate new access token
+		const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+			expiresIn: '15m',
+		});
+
+		res.status(200).json({
+			accessToken,
+			message: 'Token refreshed successfully',
+		});
+	} catch (error) {
+		if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+			throw new UnauthorizedError('Invalid or expired refresh token');
+		}
+		throw error;
+	}
+});
+
+const logout = catchAsync(async (req, res) => {
+	const userId = req.user.id;
+
+	const user = await User.findById(userId);
+	if (user) {
+		// Clear refresh token
+		user.refreshToken = undefined;
+		user.refreshTokenExpires = undefined;
+		await user.save();
+	}
+
+	res.status(200).json({
+		status: 'success',
+		message: 'Logged out successfully',
 	});
 });
 
@@ -303,4 +362,6 @@ module.exports = {
 	requestPasswordReset,
 	resetPassword,
 	changePassword,
+	refreshToken,
+	logout,
 };

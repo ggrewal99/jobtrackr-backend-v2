@@ -4,97 +4,109 @@ This is the backend for the **JobTracker** application, a full-stack web app des
 
 ## 🚀 Features
 
-- User authentication (JWT-based)
-- CRUD operations for job applications (add, update, delete, view)
-- Secure password storage (bcrypt)
-- MongoDB integration for data storage
-- Email services (email verification, password reset)
+-   User authentication (JWT-based)
+-   CRUD operations for job applications (add, update, delete, view)
+-   Secure password storage (bcrypt)
+-   MongoDB integration for data storage
+-   Email services (email verification, password reset)
 
 ## 🔧 Tech Stack
 
-**Backend:**  
-- Node.js  
-- Express.js  
-- MongoDB (with Mongoose)  
-- JWT for authentication  
-- Bcrypt for password hashing  
+**Backend:**
+
+-   Node.js
+-   Express.js
+-   MongoDB (with Mongoose)
+-   JWT for authentication
+-   Bcrypt for password hashing
 
 ## 🛠 Installation & Setup
 
 ### Prerequisites
 
 Make sure you have the following installed:
-- Node.js (v16+)
-- npm or yarn
-- MongoDB (local instance or MongoDB Atlas for cloud hosting)
+
+-   Node.js (v16+)
+-   npm or yarn
+-   MongoDB (local instance or MongoDB Atlas for cloud hosting)
 
 ### Step-by-Step Setup
 
 1. Clone this repository:
 
-   ```bash
-   git clone https://github.com/your-username/jobtracker-backend.git
-   cd jobtracker-backend
-   ```
+    ```bash
+    git clone https://github.com/your-username/jobtracker-backend.git
+    cd jobtracker-backend
+    ```
 
 2. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 3. Create a `.env` file in the root directory and add the following:
 
-   ```env
-   PORT=5000
-   MONGO_URI=your_mongodb_connection
-   JWT_SECRET=your_jwt_secret
-   EMAIL_USER=your_email
-   EMAIL_PASS=your_password
-   FRONTEND_URL=http://localhost:3000
-   ```
+    ```env
+    PORT=5000
+    MONGO_URI=your_mongodb_connection
+    JWT_SECRET=your_jwt_secret
+    JWT_REFRESH_SECRET=your_jwt_refresh_secret
+    EMAIL_USER=your_email
+    EMAIL_PASS=your_password
+    FRONTEND_URL=http://localhost:3000
+    ```
 
-   Note:
-   - `EMAIL_USER` and `EMAIL_PASS` are used for the email service to handle email verification and password reset functionality
-   - `FRONTEND_URL` points to your frontend application for proper redirection
+    Note:
+
+    - `JWT_REFRESH_SECRET` is used for refresh tokens. If not provided, `JWT_SECRET` will be used as fallback.
+
+    Note:
+
+    - `EMAIL_USER` and `EMAIL_PASS` are used for the email service to handle email verification and password reset functionality
+    - `FRONTEND_URL` points to your frontend application for proper redirection
 
 4. Start the server in development mode:
 
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run dev
+    ```
 
 The server will now be running at `http://localhost:5000`.
 
 ## 📄 API Endpoints
 
 ### Authentication
-* `POST /api/auth/register` - Register a new user
-* `POST /api/auth/login` - User login and JWT token generation
-* `POST /api/auth/update` - Update user details
-* `POST /api/auth/change-password` - Change user password
-* `POST /api/auth/verify-email` - Verify user email
-* `POST /api/auth/forgot-password` - Request password reset
-* `POST /api/auth/reset-password` - Reset user password
-* `POST /api/auth/resend-verification` - Resend verification email
+
+-   `POST /api/auth/register` - Register a new user
+-   `POST /api/auth/login` - User login and JWT token generation (returns accessToken and refreshToken)
+-   `POST /api/auth/refresh` - Refresh access token using refresh token
+-   `POST /api/auth/logout` - Logout user and invalidate refresh token
+-   `POST /api/auth/update` - Update user details
+-   `POST /api/auth/change-password` - Change user password
+-   `POST /api/auth/verify-email` - Verify user email
+-   `POST /api/auth/forgot-password` - Request password reset
+-   `POST /api/auth/reset-password` - Reset user password
+-   `POST /api/auth/resend-verification` - Resend verification email
 
 ### Job Applications
-* `GET /api/jobs` - Get all job applications (admin only)
-* `POST /api/jobs` - Add a new job application
-* `PATCH /api/jobs/:id` - Update an existing job application
-* `DELETE /api/jobs/:id` - Delete a job application
-* `GET /api/jobs/:id` - Get a specific job application
+
+-   `GET /api/jobs` - Get all job applications (admin only)
+-   `POST /api/jobs` - Add a new job application
+-   `PATCH /api/jobs/:id` - Update an existing job application
+-   `DELETE /api/jobs/:id` - Delete a job application
+-   `GET /api/jobs/:id` - Get a specific job application
 
 ## 🌐 Deployment
 
-* The backend is deployed on **Render**.
-* Ensure to update the `.env` file for production deployment with your production MongoDB URI, JWT secret, and email credentials.
+-   The backend is deployed on **Render**.
+-   Ensure to update the `.env` file for production deployment with your production MongoDB URI, JWT secret, and email credentials.
 
 ## 🔒 Security Considerations
 
-* All passwords are hashed using **bcrypt** before storing them in the database.
-* Authentication is handled with **JWT** to provide secure and stateless login sessions.
-* Email functionality uses dedicated credentials that should be kept secure.
+-   All passwords are hashed using **bcrypt** before storing them in the database.
+-   Authentication is handled with **JWT** to provide secure and stateless login sessions.
+-   Email functionality uses dedicated credentials that should be kept secure.
 
 ## 💡 Testing
 
